@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: Serveice
+  datasource:
+    url: jdbc:mysql://localhost:3306/Library-db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root          # ??????
+    password: 20130914       # ??????
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.Library.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+pagehelper:
+  reasonable: true
+  dialect: mysql
+  support-methods-arguments: true
+  params: count=countSql
+
+logging:
+  level:
+    com.Library.mapper: debug
+
