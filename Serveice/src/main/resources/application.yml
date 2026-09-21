@@ -5,7 +5,7 @@ spring:
   application:
     name: Serveice
   datasource:
-    url: jdbc:mysql://localhost:3306/Library-db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/library_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: root          # ??????
     password: 20130914       # ??????
     driver-class-name: com.mysql.cj.jdbc.Driver
