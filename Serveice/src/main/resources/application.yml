@@ -18,9 +18,9 @@ mybatis:
 
 pagehelper:
   reasonable: true
-  dialect: mysql
   support-methods-arguments: true
   params: count=countSql
+  auto-runtime-dialect: true
 
 logging:
   level:

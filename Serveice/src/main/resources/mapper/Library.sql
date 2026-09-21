@@ -1,0 +1,11 @@
+DROP TABLE  IF EXISTS `admin`;
+CREATE TABLE IF NOT EXISTS `admin` (
+    `id` INT(11) PRIMARY KEY NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `username` VARCHAR(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '用户名',
+    `password` VARCHAR(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '密码',
+    `adminType` INT(11) NULL DEFAULT NULL COMMENT '管理员类型'
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT '管理员' ROW_FORMAT = Dynamic ;
+
+INSERT INTO `admin` VALUES (1, 'admin', '12345', 1);
+INSERT INTO `admin` VALUES (2, 'qqwer', '12345', 0);
+INSERT INTO `admin` VALUES (4, 'xy1222', '12345', 0);
