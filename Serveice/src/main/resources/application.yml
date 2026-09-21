@@ -6,13 +6,8 @@ spring:
     name: Serveice
   datasource:
     url: jdbc:mysql://localhost:3306/library_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-<<<<<<< HEAD
     username: Library_db          # ??????
     password: Library_db       # ??????
-=======
-    username: root          # ??????
-    password: 20130914       # ??????
->>>>>>> b32d01d742d624c01a3c0c9a5d888c00cf8763de
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis:
