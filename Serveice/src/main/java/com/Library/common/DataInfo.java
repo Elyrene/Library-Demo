@@ -35,4 +35,7 @@ public class DataInfo<T> {
     public static  <T> DataInfo<T> fail(String mes) {
         return  new DataInfo<T>(-1, mes, null, null );
     }
+
+    public static <T> DataInfo<T> fail(Integer code, String msg) {
+        return new DataInfo<>(code, msg, null, null); }
 }
