@@ -12,5 +12,6 @@ public interface AdminMapper {
     int insert(Admin admin);
     int updatePassword(@Param("id") Integer id, @Param("password") String password);
     int deleteByIds(@Param("ids") List<Integer> ids);
+    Admin findById(@Param("id") Integer id);
 
 }

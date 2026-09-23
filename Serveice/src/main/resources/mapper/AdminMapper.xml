@@ -17,4 +17,33 @@
         </where>
         ORDER BY id DESC
     </select>
+
+    <!-- 根据用户名查询管理员 -->
+    <select id="findByUsername" resultType="com.Library.entity.Admin">
+        SELECT id, username, password, adminType
+        FROM admin
+        WHERE username = #{username}
+        LIMIT 1
+    </select>
+
+    <!-- 新增管理员 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO admin (username, password, adminType)
+        VALUES (#{username}, #{password}, #{adminType})
+    </insert>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM admin
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="findById" resultType="com.Library.entity.Admin">
+        SELECT id, username, password, adminType
+        FROM admin
+        WHERE id = #{id}
+    </select>
 </mapper>
