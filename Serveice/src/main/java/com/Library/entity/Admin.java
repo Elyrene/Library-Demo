@@ -9,5 +9,4 @@ public class Admin {
     private String password;
     private Integer adminType;
 
-
 }
