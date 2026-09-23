@@ -24,6 +24,10 @@ public class DataInfo<T> {
     // 数据
     private T data;
 
+    public static <T> DataInfo<T> ok() {
+        return new DataInfo<>(0, "ok", null, null);
+    }
+
     public static <T> DataInfo<T> ok(T data)  {
         return new DataInfo<>(0, "ok", null, data);
     }
