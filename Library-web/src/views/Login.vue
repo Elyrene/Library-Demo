@@ -1,4 +1,29 @@
 <script setup lang="ts">
+import { api } from '@/api';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const message = ref<string>('');
+const username = ref<string>('');
+const password = ref<string>('');
+
+const handleLogin = async () => {
+  const info = {username: username.value.trim(), password: password.value.trim(), role: 'admin'};
+  try {
+    const data = await api.post<AuthLogin>('/api/auth/login', info);
+    console.log(data);
+    if (data.code === -1) {
+      message.value = data.mes;
+      return;
+    } else if(data.code === 0) {
+      router.push('/home');
+    }
+  } catch(err) {
+    console.log(err);
+  }
+}
 
 </script>
 
@@ -15,6 +40,7 @@
             id="username"
             class="form-input"
             placeholder="请输入用户名"
+            v-model="username"
             required
           />
         </div>
@@ -26,9 +52,12 @@
             id="password"
             class="form-input"
             placeholder="请输入密码"
+            v-model="password"
             required
           />
         </div>
+
+        <p class="message">{{ message }}</p>
         
         <div class="form-options">
           <label class="checkbox-label">
@@ -37,7 +66,7 @@
           </label>
         </div>
         
-        <button type="submit" class="login-button">
+        <button type="submit" class="login-button" @click="handleLogin">
           登录
         </button>
         
@@ -52,6 +81,10 @@
 
 <style scoped>
 
+.message {
+  color: #c61818;
+  margin: 0 0 30px 0;
+}
 
 .login-container {
   width: 100%;
