@@ -9,4 +9,17 @@
         WHERE username = #{username}
         LIMIT 1
     </select>
+    <select id="findById" resultType="com.Library.entity.ReaderInfo">
+        SELECT id, username, password, realName, sex, birthday, address, tel, email, registerDate, readerNumber
+        FROM reader_info
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reader_info (username, password, realName, sex, birthday, address, tel, email, registerDate, readerNumber)
+        VALUES (#{username}, #{password}, #{realName}, #{sex}, #{birthday}, #{address}, #{tel}, #{email}, #{registerDate}, #{readerNumber})
+    </insert>
+    <select id="findMaxReaderNumber" resultType="string">
+        SELECT MAX(readerNumber) FROM reader_info
+    </select>
 </mapper>

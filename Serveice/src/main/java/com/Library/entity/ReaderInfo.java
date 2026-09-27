@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 public class ReaderInfo {
@@ -16,6 +17,6 @@ public class ReaderInfo {
     private String address;
     private String tel;
     private String email;
-    private LocalDateTime registerDate;
+    private Date registerDate;
     private String readerNumber;
 }
