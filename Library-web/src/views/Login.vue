@@ -83,7 +83,7 @@ const handleLogin = async () => {
       </div>
       
       <div class="login-footer">
-        <p>还没有账号？<a href="#" class="register-link">立即注册</a></p>
+        <p>还没有账号？<a href="regist" class="register-link">立即注册</a></p>
       </div>
     </div>
   </div>
