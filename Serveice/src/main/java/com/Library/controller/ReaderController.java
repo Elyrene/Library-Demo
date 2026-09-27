@@ -5,7 +5,6 @@ import com.Library.common.DataInfo;
 import com.Library.controller.dto.RegisterRequest;
 import com.Library.entity.ReaderInfo;
 import com.Library.mapper.ReaderInfoMapper;
-import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.github.pagehelper.autoconfigure.PageHelperProperties;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @RestController

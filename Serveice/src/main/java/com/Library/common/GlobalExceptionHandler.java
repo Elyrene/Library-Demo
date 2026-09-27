@@ -1,6 +1,8 @@
 package com.Library.common;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalAccessException.class)
     public ResponseEntity<DataInfo<Void>> handlerBadRequest(IllegalAccessException ex) {
         return ResponseEntity.badRequest().body(DataInfo.fail(ex.getMessage()));
+    }
+
+    //如果方法参数直接校验（如 @Validated 加在类上 + @NotBlank String param），
+    //抛的是 ConstraintViolationException，你的这个 Handler 没有覆盖它，会掉进 handleAny 返回 500。
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<DataInfo<Void>> handleConstraint(ConstraintViolationException ex) {
+        String msg = ex.getConstraintViolations().stream()
+                .findFirst()
+                .map(ConstraintViolation::getMessage)
+                .orElse("参数校验失败");
+        return ResponseEntity.badRequest().body(DataInfo.fail(msg));
     }
 
     // 其他异常
