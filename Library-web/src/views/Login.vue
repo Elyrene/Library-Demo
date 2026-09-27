@@ -8,20 +8,30 @@ const router = useRouter();
 const message = ref<string>('');
 const username = ref<string>('');
 const password = ref<string>('');
+const loading = ref<boolean>(false);
 
 const handleLogin = async () => {
-  const info = {username: username.value.trim(), password: password.value.trim(), role: 'admin'};
+  if (!username.value.trim() || !password.value) {
+    message.value = "请输入用户名和密码";
+    return;
+  }
+  loading.value = true;
   try {
-    const data = await api.post<AuthLogin>('/api/auth/login', info);
+    const data = await api.post<AuthLogin>('/api/auth/login', {
+      username: username.value.trim(),
+      password: password.value,
+      role: "admin"
+    });
     console.log(data);
-    if (data.code === -1) {
-      message.value = data.mes;
-      return;
-    } else if(data.code === 0) {
+    if (data.code === 0) {
       router.push('/home');
+    } else if(data.code === 0) {
+      message.value = data.mes;
     }
   } catch(err) {
-    console.log(err);
+    message.value = "网络异常，请稍后重试";
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -66,8 +76,8 @@ const handleLogin = async () => {
           </label>
         </div>
         
-        <button type="submit" class="login-button" @click="handleLogin">
-          登录
+        <button :disabled="loading" class="login-button" @click="handleLogin">
+          {{ loading ? "登录中..." : "登录"}}
         </button>
         
       </div>
