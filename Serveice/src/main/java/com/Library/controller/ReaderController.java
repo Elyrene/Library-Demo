@@ -8,10 +8,7 @@ import com.Library.mapper.ReaderInfoMapper;
 import com.github.pagehelper.autoconfigure.PageHelperProperties;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 
@@ -24,6 +21,16 @@ public class ReaderController {
     public ReaderController(ReaderInfoMapper readerInfoMapper, PageHelperProperties pageHelperProperties) {
         this.readerInfoMapper = readerInfoMapper;
         this.pageHelperProperties = pageHelperProperties;
+    }
+
+    @GetMapping("/{id}")
+    public DataInfo<ReaderInfo> getById(@PathVariable Integer id) {
+        ReaderInfo reader = readerInfoMapper.findById(id);
+        if (reader == null) {
+            return DataInfo.fail("读者不存在");
+        }
+        reader.setPassword(null);
+        return DataInfo.ok(reader);
     }
 
     @PostMapping("/register")
