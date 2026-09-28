@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
 
     // "请求体校验失败异常" 和 "参数绑定校验失败异常" 的处理
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    public ResponseEntity<DataInfo<Void>> handleValidation(Exception ex) {
+    public DataInfo<Void> handleValidation(Exception ex) {
         String msg = "参数校验失败";
         if (ex instanceof MethodArgumentNotValidException manv && manv.getBindingResult().getFieldError() != null) {
             msg = manv.getBindingResult().getFieldError().getDefaultMessage();
@@ -26,7 +26,8 @@ public class GlobalExceptionHandler {
         if (ex instanceof BindException be && be.getBindingResult().getFieldError() != null) {
             msg = be.getBindingResult().getFieldError().getDefaultMessage();
         }
-        return ResponseEntity.badRequest().body(DataInfo.fail(msg));
+        return DataInfo.fail(msg);
+//        return ResponseEntity.badRequest().body(DataInfo.fail(msg));
     }
 
     // 非法参数异常
