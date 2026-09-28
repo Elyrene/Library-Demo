@@ -24,19 +24,24 @@ const handleRegist = async () => {
     return
   }
   try {
-    const data = api.post('/api/readers/register', {
+    const data = await api.post<ReadersRegister>('/api/readers/register', {
         username: username.value,
         realName: realName.value,
-        password: password.value
+        password: password.value,
     });
     console.log(data);
+    if (data.code == 0) {
+      router.push('/');
+    } else if (data.code == -1) {
+      message.value = data.mes;
+    }
   } catch (err) {
     message.value = "网络错误，请稍后重试";
+    console.log(err);
   } finally {
     loading.value = false;
   }
 } 
-
 </script>
 
 <template>

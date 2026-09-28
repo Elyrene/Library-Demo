@@ -1,4 +1,4 @@
-import Loginpage from '../views/Login.vue'
+import Login from '../views/Login.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -6,21 +6,18 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'loginpage',
-      component: Loginpage,
+      name: 'login',
+      component: Login,
     },
     {
       path: '/home',
       name: 'home',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import("../views/Home.vue")
+      component: () => import("../views/Home.vue"),
     },
     {
       path: '/regist',
       name: 'regist',
-      component: () => import("../views/regist.vue")
+      component: () => import("../views/Regist.vue"),
     }
   ],
 })

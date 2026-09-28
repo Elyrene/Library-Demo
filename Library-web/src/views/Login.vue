@@ -20,12 +20,12 @@ const handleLogin = async () => {
     const data = await api.post<AuthLogin>('/api/auth/login', {
       username: username.value.trim(),
       password: password.value,
-      role: "admin"
+      role: "reader"
     });
     console.log(data);
     if (data.code === 0) {
       router.push('/home');
-    } else if(data.code === 0) {
+    } else if(data.code === -1) {
       message.value = data.mes;
     }
   } catch(err) {
