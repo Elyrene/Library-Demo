@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
+const role = ref<string>('');
 const message = ref<string>('');
 const username = ref<string>('');
 const password = ref<string>('');
@@ -14,15 +15,18 @@ const handleLogin = async () => {
   if (!username.value.trim() || !password.value) {
     message.value = "请输入用户名和密码";
     return;
+  } else if (!role.value) {
+    message.value = "请选择登录角色";
+    return;
   }
   loading.value = true;
   try {
     const data = await api.post<AuthLogin>('/api/auth/login', {
       username: username.value.trim(),
       password: password.value,
-      role: "reader"
+      role: role.value,
     });
-    console.log(data);
+    // console.log(data);
     if (data.code === 0) {
       router.push('/home');
     } else if(data.code === -1) {
@@ -43,6 +47,16 @@ const handleLogin = async () => {
       <h2 class="login-title">登录</h2>
       
       <div class="login-form">
+
+        <div class="form-group">
+          <label for="username" class="form-label">角色</label>
+            <select id="role" class="form-input" v-model="role" required>
+              <option value="" disabled>请选择登录角色</option>
+              <option value="admin">管理员</option>
+              <option value="reader">读者</option>
+            </select>
+        </div>
+
         <div class="form-group">
           <label for="username" class="form-label">用户名</label>
           <input

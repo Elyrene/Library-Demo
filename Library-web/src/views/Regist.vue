@@ -63,10 +63,10 @@ const handleRegist = async () => {
         </div>
 
         <div class="form-group">
-          <label for="username" class="form-label">真实姓名</label>
+          <label for="realName" class="form-label">真实姓名</label>
           <input
             type="text"
-            id="username"
+            id="realName"
             class="form-input"
             placeholder="请输入姓名"
             v-model="realName"
@@ -87,10 +87,10 @@ const handleRegist = async () => {
         </div>
 
         <div class="form-group">
-          <label for="password" class="form-label">确认密码</label>
+          <label for="confirmpassword" class="form-label">确认密码</label>
           <input
             type="password"
-            id="password"
+            id="confirmpassword"
             class="form-input"
             placeholder="请输入密码"
             v-model="confirmpassword"
