@@ -6,6 +6,7 @@ const STORAGE_KEY = 'library_key';
 export const useUserStore = defineStore('user', () => {
   const user = ref<readerInfo | adminInfo | null>(null);
   const cookie = ref<string>('');
+  const role = ref<string>('');
 
   const isLoginedIn = computed(() => !!user.value);
 
@@ -22,11 +23,12 @@ export const useUserStore = defineStore('user', () => {
       id: payload.id,
       username: payload.username,
       adminType: payload.adminType,
-      cookie: payload.cookie,
+      cookie: payload.cookie || cookie.value,
     }
     user.value = normalized;
     cookie.value = normalized.cookie || '';
     persist(normalized);
+    localStorage.removeItem(STORAGE_KEY + '_cookie');
   }
 
   const setReader = (payload: readerInfo) => {
@@ -46,6 +48,13 @@ export const useUserStore = defineStore('user', () => {
     user.value = normalized;
     cookie.value = normalized.cookie || '';
     persist(normalized);
+    localStorage.removeItem(STORAGE_KEY + '_cookie');
+  }
+
+  const setRole = (val: string) => {
+    if (!val) return;
+    role.value = val;
+    localStorage.setItem(STORAGE_KEY + '_role', JSON.stringify(val));
   }
 
   const setCookie = (val: string) => {
@@ -61,9 +70,11 @@ export const useUserStore = defineStore('user', () => {
 
   const clearUser = () => {
     user.value = null;
+    role.value = '';
     cookie.value = '';
     persist(null);
     localStorage.removeItem(STORAGE_KEY + '_cookie');
+    localStorage.removeItem(STORAGE_KEY + '_role');
   }
 
   const initFormlocal = () => {
@@ -78,10 +89,12 @@ export const useUserStore = defineStore('user', () => {
     }
 
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return;
+    const rawrole = localStorage.getItem(STORAGE_KEY + '_role');
+    if(!raw || !rawrole) return;
 
     try {
       const parsed: readerInfo | adminInfo = JSON.parse(raw);
+      role.value = JSON.parse(rawrole);
       if (parsed && parsed.id) {
         user.value = parsed;
         cookie.value = parsed.cookie || cookie.value;
@@ -99,8 +112,10 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     user,
+    role,
     cookie,
     isLoginedIn,
+    setRole,
     setAdmin,
     setReader,
     setCookie,

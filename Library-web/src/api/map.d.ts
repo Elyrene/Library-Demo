@@ -3,11 +3,11 @@ interface readerInfo {
     username: string;
     realName: string;
     sex: string;
-    birthday: Date;
+    birthday: string;
     address: string;
     tel: string;
     email: string;
-    registerDate: Date;
+    registerDate: string;
     readerNumber: string;
     cookie?: string;
 }
