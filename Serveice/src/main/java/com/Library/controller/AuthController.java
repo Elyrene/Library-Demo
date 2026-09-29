@@ -50,12 +50,12 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<DataInfo<Map<String, Object>>> me (HttpSession session) {
+    public DataInfo<Map<String, Object>> me (HttpSession session) {
         Object user = session.getAttribute(Contants.SESSION_USER);
         Object type = session.getAttribute(Contants.SESSION_TYPE);
 
         if (user == null || type == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(DataInfo.fail("未登录"));
+            return DataInfo.fail("未登录");
 
         }
 
@@ -85,6 +85,6 @@ public class AuthController {
 
         }
 
-        return ResponseEntity.ok(DataInfo.ok(res));
+        return DataInfo.ok(res);
     }
 }
