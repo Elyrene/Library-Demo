@@ -18,3 +18,9 @@ interface adminInfo {
     adminType: number;
     cookie?: string;
 }
+
+interface SessionData {
+    user: readerInfo | adminInfo | null;
+    role: string;
+    cookie: string;
+}

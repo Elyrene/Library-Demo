@@ -3,118 +3,99 @@ import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'library_key';
 
+
 export const useUserStore = defineStore('user', () => {
   const user = ref<readerInfo | adminInfo | null>(null);
   const cookie = ref<string>('');
   const role = ref<string>('');
 
-  const isLoginedIn = computed(() => !!user.value);
+  const isLoggedIn = computed(() => !!user.value);
 
-  const persist = (data: readerInfo | adminInfo | null) => {
-    if (data) {
+  const persist = () => {
+    if (user.value || role.value) {
+      const data: SessionData = { user: user.value, role: role.value, cookie: cookie.value };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
   }
 
-  const setAdmin = (payload: adminInfo) => {
-    const normalized: adminInfo = {
+  const setAdmin = (payload: adminInfo, roleVal?: string) => {
+    user.value = {
       id: payload.id,
       username: payload.username,
       adminType: payload.adminType,
       cookie: payload.cookie || cookie.value,
     }
-    user.value = normalized;
-    cookie.value = normalized.cookie || '';
-    persist(normalized);
-    localStorage.removeItem(STORAGE_KEY + '_cookie');
+    cookie.value = (user.value as adminInfo).cookie || '';
+    if(roleVal) role.value = roleVal;
+    persist();
   }
 
   const setReader = (payload: readerInfo) => {
-    const normalized: readerInfo = {
-      id: payload.id,
-      username: payload.username,
-      realName: payload.realName,
-      sex: payload.sex,
-      birthday: payload.birthday,
-      address: payload.address,
-      tel: payload.tel,
-      email: payload.email,
-      registerDate: payload.registerDate,
-      readerNumber: payload.readerNumber,
+    user.value = {
+      ...payload,
       cookie: payload.cookie || cookie.value,
     }
-    user.value = normalized;
-    cookie.value = normalized.cookie || '';
-    persist(normalized);
-    localStorage.removeItem(STORAGE_KEY + '_cookie');
+    cookie.value = (user.value as readerInfo).cookie || '';
+    persist();
   }
 
   const setRole = (val: string) => {
     if (!val) return;
     role.value = val;
-    localStorage.setItem(STORAGE_KEY + '_role', JSON.stringify(val));
+    persist();
   }
 
   const setCookie = (val: string) => {
     if (!val) return;
     cookie.value = val;
     if (user.value) {
-      user.value.cookie = val;
-      persist(user.value);
-    } else {
-      localStorage.setItem(STORAGE_KEY + '_cookie', JSON.stringify(val));
-    }
+      (user.value as readerInfo | adminInfo).cookie = val;
+    } 
+    persist();
   }
 
   const clearUser = () => {
     user.value = null;
     role.value = '';
     cookie.value = '';
-    persist(null);
-    localStorage.removeItem(STORAGE_KEY + '_cookie');
-    localStorage.removeItem(STORAGE_KEY + '_role');
+    localStorage.removeItem(STORAGE_KEY);
   }
 
-  const initFormlocal = () => {
-
-    const rawCookie = localStorage.getItem(STORAGE_KEY + '_cookie');
-    if (rawCookie) {
-      try {
-        cookie.value = JSON.parse(rawCookie);
-      } catch (err) {
-        console.log("本地初始化 token 失败", err);
-      }
-    }
+  const initFromlocal = () => {
+    // SSR 防御
+    if(typeof window === 'undefined') return;
 
     const raw = localStorage.getItem(STORAGE_KEY);
-    const rawrole = localStorage.getItem(STORAGE_KEY + '_role');
-    if(!raw || !rawrole) return;
+    if(!raw) return;
 
     try {
-      const parsed: readerInfo | adminInfo = JSON.parse(raw);
-      role.value = JSON.parse(rawrole);
-      if (parsed && parsed.id) {
-        user.value = parsed;
-        cookie.value = parsed.cookie || cookie.value;
+      const parsed: SessionData = JSON.parse(raw);
+      if (parsed?.user?.id && parsed.user.id !== null) {
+        const roleOk = (parsed.role === 'admin' && 'adminType' in parsed.user)
+          || (parsed.role === 'reader' && 'readerNumber' in parsed.user);
+        if (!roleOk) { localStorage.removeItem(STORAGE_KEY); return; }
+        user.value = parsed.user;
+        role.value = parsed.role || ''; 
+        cookie.value = parsed.cookie || '';
       } else {
-        persist(null);
+        localStorage.removeItem(STORAGE_KEY);
       }
     } catch (err) {
       console.log("初始化本地存储失败", err);
-      persist(null);
+      localStorage.removeItem(STORAGE_KEY);
     }
 
   }
 
-  initFormlocal();
+  initFromlocal();
 
   return {
     user,
     role,
     cookie,
-    isLoginedIn,
+    isLoggedIn,
     setRole,
     setAdmin,
     setReader,

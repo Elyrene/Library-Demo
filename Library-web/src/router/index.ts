@@ -28,7 +28,7 @@ export default router
 
 router.beforeEach(async (to) => {
   const userStore = useUserStore();
-  if (!userStore.isLoginedIn) {
+  if (!userStore.isLoggedIn) {
     const data = await api.get("/api/auth/me");
     // userStore.user = data.role;
   }
