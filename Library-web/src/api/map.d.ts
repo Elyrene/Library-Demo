@@ -1,4 +1,4 @@
-interface userInfo {
+interface readerInfo {
     id: number;
     username: string;
     realName: string;
@@ -9,5 +9,12 @@ interface userInfo {
     email: string;
     registerDate: Date;
     readerNumber: string;
+    cookie?: string;
+}
+
+interface adminInfo {
+    id: number;
+    username: string;
+    adminType: number;
     cookie?: string;
 }

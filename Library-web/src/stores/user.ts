@@ -4,12 +4,12 @@ import { defineStore } from 'pinia'
 const STORAGE_KEY = 'library_key';
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref<userInfo | null>(null);
+  const user = ref<readerInfo | adminInfo | null>(null);
   const cookie = ref<string>('');
 
   const isLoginedIn = computed(() => !!user.value);
 
-  const persist = (data: userInfo | null) => {
+  const persist = (data: readerInfo | adminInfo | null) => {
     if (data) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } else {
@@ -17,8 +17,20 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const setUser = (payload: userInfo) => {
-    const normalized: userInfo = {
+  const setAdmin = (payload: adminInfo) => {
+    const normalized: adminInfo = {
+      id: payload.id,
+      username: payload.username,
+      adminType: payload.adminType,
+      cookie: payload.cookie,
+    }
+    user.value = normalized;
+    cookie.value = normalized.cookie || '';
+    persist(normalized);
+  }
+
+  const setReader = (payload: readerInfo) => {
+    const normalized: readerInfo = {
       id: payload.id,
       username: payload.username,
       realName: payload.realName,
@@ -69,7 +81,7 @@ export const useUserStore = defineStore('user', () => {
     if(!raw) return;
 
     try {
-      const parsed: userInfo = JSON.parse(raw);
+      const parsed: readerInfo | adminInfo = JSON.parse(raw);
       if (parsed && parsed.id) {
         user.value = parsed;
         cookie.value = parsed.cookie || cookie.value;
@@ -89,7 +101,8 @@ export const useUserStore = defineStore('user', () => {
     user,
     cookie,
     isLoginedIn,
-    setUser,
+    setAdmin,
+    setReader,
     setCookie,
     clearUser,
   }
