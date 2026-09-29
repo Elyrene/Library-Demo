@@ -9,10 +9,12 @@ import com.Library.mapper.AdminMapper;
 import com.Library.mapper.ReaderInfoMapper;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -45,5 +47,44 @@ public class AuthController {
         session.setAttribute(Contants.SESSION_USER, reader);
         session.setAttribute(Contants.SESSION_TYPE, "reader");
         return DataInfo.ok();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<DataInfo<Map<String, Object>>> me (HttpSession session) {
+        Object user = session.getAttribute(Contants.SESSION_USER);
+        Object type = session.getAttribute(Contants.SESSION_TYPE);
+
+        if (user == null || type == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(DataInfo.fail("未登录"));
+
+        }
+
+        HashMap<String, Object> res = new HashMap<>();
+        res.put("role", type);
+        if (user instanceof Admin a) {
+            Admin safe = new Admin();
+            safe.setId(a.getId());
+            safe.setUsername(a.getUsername());
+            safe.setAdminType(a.getAdminType());
+            res.put("user", safe);
+        } else if (user instanceof ReaderInfo r) {
+            ReaderInfo safe = new ReaderInfo();
+            safe.setId(r.getId());
+            safe.setUsername(r.getUsername());
+            safe.setRealName(r.getRealName());
+            safe.setSex(r.getSex());
+            safe.setBirthday(r.getBirthday());
+            safe.setAddress(r.getAddress());
+            safe.setTel(r.getTel());
+            safe.setEmail(r.getEmail());
+            safe.setRegisterDate(r.getRegisterDate());
+            safe.setReaderNumber(r.getReaderNumber());
+            res.put("user", safe);
+        } else {
+            res.put("user", null);
+
+        }
+
+        return ResponseEntity.ok(DataInfo.ok(res));
     }
 }
