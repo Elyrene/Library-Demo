@@ -8,13 +8,8 @@ const UserStore = useUserStore();
 
 const logout = () => {
     UserStore.clearUser();
-    router.push('/');
+    router.push('/login');
 }
-
-onMounted(() => {
-
-})
-
 </script>
     
 <template>

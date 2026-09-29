@@ -24,7 +24,7 @@ const handleRegist = async () => {
     return
   }
   try {
-    const data = await api.post<ReadersRegister>('/api/readers/register', {
+    const data = await api.post<ReadersRegisterRes>('/api/readers/register', {
         username: username.value,
         realName: realName.value,
         password: password.value,

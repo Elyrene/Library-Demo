@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { api } from '@/api';
+import { useUserStore } from '@/stores/user';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+
+const UserStore = useUserStore();
 
 const role = ref<string>('');
 const message = ref<string>('');
@@ -21,13 +24,26 @@ const handleLogin = async () => {
   }
   loading.value = true;
   try {
-    const data = await api.post<AuthLogin>('/api/auth/login', {
+    const data = await api.post<AuthLoginRes>('/api/auth/login', {
       username: username.value.trim(),
       password: password.value,
       role: role.value,
     });
-    // console.log(data);
+    console.log(data);
     if (data.code === 0) {
+      try {
+        const data = await api.get<AuthMeRes>('/api/auth/me');
+        console.log(data);
+        if (data.data.role === 'admim') {
+          UserStore.setRole("admin");
+          UserStore.setAdmin(data.data.user as adminInfo);
+        } else {
+          UserStore.setRole("reader");
+          UserStore.setReader(data.data.user as readerInfo);
+        }
+      } catch (err) {
+        message.value = data.mes;
+      }
       router.push('/home');
     } else if(data.code === -1) {
       message.value = data.mes;

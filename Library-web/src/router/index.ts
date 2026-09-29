@@ -7,7 +7,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
+      path: '/login',
       name: 'login',
       component: Login,
     },
@@ -26,10 +26,24 @@ const router = createRouter({
 
 export default router
 
-router.beforeEach(async (to) => {
-  const userStore = useUserStore();
-  if (!userStore.isLoggedIn) {
-    const data = await api.get("/api/auth/me");
-    // userStore.user = data.role;
-  }
-})
+// router.beforeEach(async (to) => {
+//   const userStore = useUserStore();
+//   if (!userStore.isLoggedIn) {
+//     try {
+//       const data = await api.get<AuthMeRes>("/api/auth/me");
+//       userStore.setRole(data.data.role);
+//       if(userStore.role === 'admin') {
+//         userStore.setAdmin(data.data.user as adminInfo);
+//       } else {
+//         userStore.setReader(data.data.user as readerInfo);
+//       }
+//     } catch {
+//       userStore.clearUser();
+//     }
+
+//   }
+//   const needRole = to.meta.role as string | undefined;
+//   if (needRole && userStore.role !== needRole) {
+//     return userStore.role === 'admin' ? '/home' : '/home';
+//   }
+// })
