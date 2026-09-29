@@ -1,9 +1,10 @@
-type HttpMethod = 'GET' | 'POST' | 'DELET' | 'PUT' | 'PATCH';
+type HttpMethod = 'GET' | 'POST' | 'DELETE' | 'PUT' | 'PATCH';
 
 interface HttpClientOption {
     baseURL?: string;
-    headers?: HeadersInit;
+    headers?: HeadersInit; 
     timeout?: number;
+    credentials?: RequestCredentials; 
 }
 
 interface HttpError<T = unknown> {
@@ -13,27 +14,34 @@ interface HttpError<T = unknown> {
 }
 
 interface Interceptors {
-    request: (config: RequestInit) => RequestInit;
-    response: <T>(response: T) => T;  
+    request: (config: RequestInit) => RequestInit,
+    response: <T>(Response: T) => T,
 }
+
+// type InterceptorRequest = (config: RequestInit) => RequestInit;
+// type InterceptorResponse<T = unknown> = (response: T) => T;
+
 
 export class HttpClient {
     public baseURL: string;
     private defaultHeaders: HeadersInit;
     private timeout: number;
+    private credentials: RequestCredentials;  // 新增
     public interceptors: Interceptors = {
         request: (config) => config,
-        response: (Response) => Response, 
+        response: (Response) => Response,
     }
 
     constructor({
         baseURL = '',
         headers = {},
         timeout = 10000,
+        credentials = 'include'
     }:HttpClientOption = {}) {
         this.baseURL = baseURL;
         this.defaultHeaders = headers;
         this.timeout = timeout;
+        this.credentials = credentials;
         this.interceptors = {
             request: (config) => config,
             response: (response) => response,
@@ -42,33 +50,32 @@ export class HttpClient {
 
     private mergeHeaders(customHeaders?: HeadersInit): HeadersInit {
         return {
-            ...(typeof this.defaultHeaders === 'object' && Array.isArray(this.defaultHeaders)
+            ...(typeof this.defaultHeaders === 'object' && !Array.isArray(this.defaultHeaders)
             ? {...this.defaultHeaders}
             : this.defaultHeaders),
-            ...(typeof customHeaders === 'object' && Array.isArray(customHeaders)
+            ...(typeof customHeaders === 'object' && !Array.isArray(customHeaders)
             ? {...customHeaders}
             : customHeaders),
-        }
+        };
     }
 
     async request<T = unknown>(
         method: HttpMethod,
         url: string,
         data: BodyInit | Record<string, unknown> | null = null,
-        customConfig: Omit<RequestInit,  'method' | 'body' | 'signal'> & {headers?: HeadersInit}
-    ):Promise<T> {
+        customConfig: Omit<RequestInit, 'method' | 'body' | 'signal'> & {headers?: HeadersInit} = {}
+    ): Promise<T> {
         const fullURL = this.baseURL + url;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-            controller.abort;
-        }, this.timeout);
+        const timeoutId = setTimeout(() => controller.abort, this.timeout);
 
         const config: RequestInit = {
             method,
             headers: this.mergeHeaders(customConfig.headers),
             signal: controller.signal,
+            credentials: this.credentials,
             ...customConfig,
-        }
+        };
 
         if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
             if (data instanceof FormData) {
@@ -84,19 +91,6 @@ export class HttpClient {
             }
         }
 
-        if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
-            if (data instanceof FormData) {
-                config.body = data;
-                const headers = config.headers as Record<string, string>;
-                delete headers['Content-Type'];
-            } else {
-                config.headers = {
-                    ...(config.headers as Record<string, string>),
-                    'Content-Type': 'application/json',
-                }
-                config.body = JSON.stringify(data);
-            }
-        }
 
         const interceptedConfig = this.interceptors.request(config);
 
@@ -123,7 +117,6 @@ export class HttpClient {
             }
             throw error;
         }
-
     }
 
     get<T = unknown>(
@@ -160,7 +153,7 @@ export class HttpClient {
         url: string,
         config: Omit<RequestInit, 'method' | 'body'> = {}
     ): Promise<T> {
-        return this.request<T>('PUT', url, null, config);
+        return this.request<T>('DELETE', url, null, config);
     }
 
     setRequestInterceptor(interceptor: Interceptors['request']): void {
