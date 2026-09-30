@@ -9,8 +9,6 @@ import com.Library.mapper.AdminMapper;
 import com.Library.mapper.ReaderInfoMapper;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -46,6 +44,14 @@ public class AuthController {
         }
         session.setAttribute(Contants.SESSION_USER, reader);
         session.setAttribute(Contants.SESSION_TYPE, "reader");
+        return DataInfo.ok();
+    }
+
+    @PostMapping("/logout")
+    public DataInfo<Void> logout(HttpSession session) {
+        session.removeAttribute(Contants.SESSION_USER);
+        session.removeAttribute(Contants.SESSION_TYPE);
+        session.invalidate();
         return DataInfo.ok();
     }
 
