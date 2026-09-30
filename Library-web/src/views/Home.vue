@@ -1,15 +1,24 @@
 <script setup lang="ts">
+import { api } from '@/api';
 import { useUserStore } from '@/stores/user';
-import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const UserStore = useUserStore();
 
-const logout = () => {
-    UserStore.clearUser();
-    router.push('/login');
+const logout = async () => {
+    try {
+        const data = await api.post<AuthLogoutRes>('/api/auth/logout', {});
+        console.log(data);
+        if (data.code == 0) {
+            UserStore.clearUser();
+            router.push('/login');
+        } 
+    } catch(err) {
+        console.log("登出失败",err);
+    }
 }
+
 </script>
     
 <template>

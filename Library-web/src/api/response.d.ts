@@ -12,6 +12,11 @@ interface AuthMeRes {
     }
 }
 
+interface AuthLogoutRes {
+    code: number;
+    mes: string;
+}
+
 interface ReadersRegisterRes {
     code: number;
     mes: string;
