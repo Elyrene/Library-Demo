@@ -32,6 +32,13 @@
         VALUES (#{username}, #{password}, #{adminType})
     </insert>
 
+    <!-- 修改密码 -->
+    <update id="updatePassword">
+        UPDATE admin
+        SET password = #{password}
+        WHERE id = #{id}
+    </update>
+
     <!-- 批量删除 -->
     <delete id="deleteByIds">
         DELETE FROM admin
