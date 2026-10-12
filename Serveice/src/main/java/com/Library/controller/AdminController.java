@@ -50,7 +50,7 @@ public class AdminController {
     public DataInfo<Void> add(@RequestBody Admin admin) {
         Admin exist = adminMapper.findByUsername(admin.getUsername());
         if (exist != null) {
-            return DataInfo.fail("用户名不存在");
+            return DataInfo.fail("用户名已存在");
         }
         if (admin.getAdminType() == null) {
             admin.setAdminType(1);
