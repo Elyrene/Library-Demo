@@ -4,6 +4,24 @@
 
 ---
 
+## 目录
+
+- [技术栈](#一技术栈)
+- [项目结构](#二项目结构)
+- [核心机制](#三核心机制)
+  - [统一响应体](#31-统一响应体-datainfot)
+  - [认证方式](#32-认证方式session-cookie)
+  - [分页机制](#33-分页机制pagehelper)
+  - [全局异常处理](#34-全局异常处理)
+  - [读者编号生成](#35-读者编号生成)
+- [接口列表](#四接口列表)
+- [已知缺陷](#五已知缺陷)
+- [启动方式](#六启动方式)
+- [初始数据](#七初始数据)
+- [项目文档](#八项目文档)
+
+---
+
 ## 一、技术栈
 
 | 组件 | 版本 / 说明 |
@@ -167,8 +185,8 @@ mvn spring-boot:run
 ```
 
 启动后访问：
-- API 文档：<http://localhost:8080>（需前端）或直接看 [api-doc.html](./api-doc.html)
-- Swagger（未启用）
+- API 文档：直接打开 [api-doc.html](./api-doc.html)（纯静态，无需启动后端）
+- 后端服务：<http://localhost:8080>
 
 ---
 
@@ -181,11 +199,10 @@ mvn spring-boot:run
 
 ---
 
-## 八、文档
+## 八、项目文档
 
 | 文件 | 说明 |
 |------|------|
-| [PROJECT.md](./PROJECT.md) | 项目完整分析报告（结构 / 功能 / 缺陷 / 建议） |
+| [README.md](./README.md) | 本文件 — 项目说明、机制、接口、缺陷、启动指南 |
 | [api-spec.json](./api-spec.json) | OpenAPI 3.0 规范（可直接导入 Postman / Swagger Editor） |
-| [api-doc.html](./api-doc.html) | Redoc 交互式文档（浏览器打开） |
-| [README.md](./README.md) | 本文件 |
+| [api-doc.html](./api-doc.html) | 纯静态 API 文档（浏览器打开，无需联网） |
