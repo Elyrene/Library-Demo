@@ -1,0 +1,678 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "图书馆管理系统 — 后端 API",
+    "description": "基于 Spring Boot 3 + MyBatis + MySQL 的图书馆管理系统后端接口文档。\n\n**认证方式**：Session（Cookie）。登录后服务端将用户对象与角色写入 `HttpSession`，后续请求需携带 Cookie（前端 `withCredentials: true`）。\n\n**统一响应格式**：所有接口返回 `DataInfo<T>` 结构：\n\n| 字段 | 类型 | 说明 |\n|------|------|------|\n| code | int | `0` = 成功，`-1` = 失败 |\n| mes | string | 消息 |\n| count | long | 分页总数（仅分页接口返回） |\n| data | any | 数据体 |\n\n> `@JsonInclude(NON_NULL)`：值为 `null` 的字段不会出现在 JSON 中。",
+    "version": "1.0.0",
+    "contact": { "name": "Library Service" }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "本地开发"
+    }
+  ],
+  "tags": [
+    { "name": "认证", "description": "登录 / 登出 / 当前用户" },
+    { "name": "管理员", "description": "管理员 CRUD" },
+    { "name": "读者", "description": "读者注册 / 查询" }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "用户登录",
+        "description": "根据 `role` 字段区分管理员 / 读者登录。成功后将用户对象和角色写入 Session。",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录结果",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": {
+                    "summary": "登录成功",
+                    "value": { "code": 0, "mes": "ok" }
+                  },
+                  "fail": {
+                    "summary": "账户或密码错误",
+                    "value": { "code": -1, "mes": "账户或者密码错误" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "登出",
+        "description": "清除 Session 中的用户信息并使 Session 失效。",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "登出成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "example": { "code": 0, "mes": "ok" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["认证"],
+        "summary": "获取当前登录用户",
+        "description": "返回 Session 中存储的当前用户信息（不含密码）。未登录时返回失败。",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "当前用户信息",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoMe" },
+                "examples": {
+                  "admin": {
+                    "summary": "管理员",
+                    "value": {
+                      "code": 0,
+                      "mes": "ok",
+                      "data": {
+                        "role": "admin",
+                        "user": { "id": 1, "username": "admin", "adminType": 1 }
+                      }
+                    }
+                  },
+                  "reader": {
+                    "summary": "读者",
+                    "value": {
+                      "code": 0,
+                      "mes": "ok",
+                      "data": {
+                        "role": "reader",
+                        "user": {
+                          "id": 1,
+                          "username": "zhangsan",
+                          "realName": "张三",
+                          "sex": "男",
+                          "birthday": "2001-04-01",
+                          "address": "江西南昌",
+                          "tel": "13767134834",
+                          "email": "zhangsan@163.com",
+                          "registerDate": "2025-01-15T10:30:00.000+08:00",
+                          "readerNumber": "8120116001"
+                        }
+                      }
+                    }
+                  },
+                  "not-logged-in": {
+                    "summary": "未登录",
+                    "value": { "code": -1, "mes": "未登录" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admins": {
+      "get": {
+        "tags": ["管理员"],
+        "summary": "分页查询管理员列表",
+        "description": "支持按用户名模糊搜索和管理员类型筛选。返回结果中 `password` 字段始终为 `null`（不序列化）。",
+        "operationId": "listAdmins",
+        "parameters": [
+          {
+            "name": "pageNum",
+            "in": "query",
+            "description": "页码（从 1 开始）",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "minimum": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页条数",
+            "required": false,
+            "schema": { "type": "integer", "default": 10, "minimum": 1 }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "description": "用户名（模糊匹配）",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "adminType",
+            "in": "query",
+            "description": "管理员类型（0=普通, 1=超级管理员）",
+            "required": false,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "管理员分页列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoAdminList" },
+                "example": {
+                  "code": 0,
+                  "mes": "ok",
+                  "count": 3,
+                  "data": [
+                    { "id": 1, "username": "admin", "adminType": 1 },
+                    { "id": 2, "username": "qqwer", "adminType": 0 },
+                    { "id": 3, "username": "xy1222", "adminType": 0 }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["管理员"],
+        "summary": "新增管理员",
+        "description": "若 `adminType` 未传则默认为 `1`（超级管理员）。用户名重复时返回失败（⚠️ 当前提示文案有误，显示\"用户名不存在\"，实际应为\"用户名已存在\"）。",
+        "operationId": "addAdmin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AdminCreate" },
+              "example": {
+                "username": "newadmin",
+                "password": "123456",
+                "adminType": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "新增结果",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": {
+                    "value": { "code": 0, "mes": "ok" }
+                  },
+                  "duplicate": {
+                    "summary": "用户名已存在（⚠️ 提示文案有误）",
+                    "value": { "code": -1, "mes": "用户名不存在" }
+                  },
+                  "fail": {
+                    "value": { "code": -1, "mes": "新增失败" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["管理员"],
+        "summary": "批量删除管理员",
+        "description": "请求体为管理员 ID 数组。",
+        "operationId": "deleteAdmins",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": { "type": "integer" },
+                "minItems": 1
+              },
+              "example": [1, 2]
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "删除结果",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": { "value": { "code": 0, "mes": "ok" } },
+                  "empty": {
+                    "value": { "code": -1, "mes": "请选择要删除的管理员" }
+                  },
+                  "fail": { "value": { "code": -1, "mes": "删除失败" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admins/{id}": {
+      "get": {
+        "tags": ["管理员"],
+        "summary": "根据 ID 查询管理员",
+        "operationId": "getAdminById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "管理员 ID",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "管理员信息",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoAdmin" },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "code": 0,
+                      "mes": "ok",
+                      "data": { "id": 1, "username": "admin", "adminType": 1 }
+                    }
+                  },
+                  "not-found": {
+                    "value": { "code": -1, "mes": "管理员不存在" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admins/{id}/password": {
+      "put": {
+        "tags": ["管理员"],
+        "summary": "修改管理员密码",
+        "description": "⚠️ **已知缺陷**：`AdminMapper.xml` 中未定义 `updatePassword` 的 SQL，运行时会抛出 `BindingException`（HTTP 500）。",
+        "operationId": "updateAdminPassword",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "管理员 ID",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["password"],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "新密码（不能为空）",
+                    "minLength": 1
+                  }
+                }
+              },
+              "example": { "password": "newpassword" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "修改结果",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": { "value": { "code": 0, "mes": "ok" } },
+                  "empty-password": {
+                    "value": { "code": -1, "mes": "密码不能为空" }
+                  },
+                  "fail": { "value": { "code": -1, "mes": "修改失败" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/readers/{id}": {
+      "get": {
+        "tags": ["读者"],
+        "summary": "根据 ID 查询读者",
+        "description": "返回结果中 `password` 字段为 `null`（不序列化）。",
+        "operationId": "getReaderById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "读者 ID",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "读者信息",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoReader" },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "code": 0,
+                      "mes": "ok",
+                      "data": {
+                        "id": 1,
+                        "username": "zhangsan",
+                        "realName": "张三",
+                        "sex": "男",
+                        "birthday": "2001-04-01",
+                        "address": "江西南昌",
+                        "tel": "13767134834",
+                        "email": "zhangsan@163.com",
+                        "registerDate": "2025-01-15T10:30:00.000+08:00",
+                        "readerNumber": "8120116001"
+                      }
+                    }
+                  },
+                  "not-found": {
+                    "value": { "code": -1, "mes": "读者不存在" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/readers/register": {
+      "post": {
+        "tags": ["读者"],
+        "summary": "读者注册",
+        "description": "注册成功后自动生成读者编号（前缀 `8120116` + 3 位流水号）。密码长度 6–20 位。",
+        "operationId": "registerReader",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" },
+              "example": {
+                "username": "zhangsan",
+                "password": "123456",
+                "realName": "张三",
+                "sex": "男",
+                "birthday": "2001-04-01",
+                "address": "江西南昌",
+                "tel": "13767134834",
+                "email": "zhangsan@163.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "注册结果",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": { "value": { "code": 0, "mes": "ok" } },
+                  "duplicate": {
+                    "value": { "code": -1, "mes": "用户名已经存在" }
+                  },
+                  "fail": {
+                    "value": { "code": -1, "mes": "注册失败，请稍后重试" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DataInfoVoid": {
+        "type": "object",
+        "description": "统一响应格式（无数据体）",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码：0=成功，-1=失败",
+            "enum": [0, -1]
+          },
+          "mes": {
+            "type": "string",
+            "description": "消息"
+          }
+        }
+      },
+      "DataInfoAdminList": {
+        "type": "object",
+        "description": "分页响应（管理员列表）",
+        "properties": {
+          "code": { "type": "integer", "enum": [0, -1] },
+          "mes": { "type": "string" },
+          "count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总记录数"
+          },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Admin" }
+          }
+        }
+      },
+      "DataInfoAdmin": {
+        "type": "object",
+        "description": "单条管理员响应",
+        "properties": {
+          "code": { "type": "integer", "enum": [0, -1] },
+          "mes": { "type": "string" },
+          "data": { "$ref": "#/components/schemas/Admin" }
+        }
+      },
+      "DataInfoReader": {
+        "type": "object",
+        "description": "单条读者响应",
+        "properties": {
+          "code": { "type": "integer", "enum": [0, -1] },
+          "mes": { "type": "string" },
+          "data": { "$ref": "#/components/schemas/ReaderInfo" }
+        }
+      },
+      "DataInfoMe": {
+        "type": "object",
+        "description": "当前用户响应",
+        "properties": {
+          "code": { "type": "integer", "enum": [0, -1] },
+          "mes": { "type": "string" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "description": "角色：admin / reader",
+                "enum": ["admin", "reader"]
+              },
+              "user": {
+                "description": "用户对象（Admin 或 ReaderInfo，取决于 role）",
+                "oneOf": [
+                  { "$ref": "#/components/schemas/Admin" },
+                  { "$ref": "#/components/schemas/ReaderInfo" },
+                  { "type": "null" }
+                ]
+              }
+            },
+            "required": ["role"]
+          }
+        }
+      },
+      "Admin": {
+        "type": "object",
+        "description": "管理员实体（查询结果中 password 为 null）",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "管理员 ID"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "maxLength": 20
+          },
+          "password": {
+            "type": ["string", "null"],
+            "description": "密码（响应中为 null）"
+          },
+          "adminType": {
+            "type": "integer",
+            "description": "管理员类型：0=普通, 1=超级管理员"
+          }
+        }
+      },
+      "AdminCreate": {
+        "type": "object",
+        "description": "新增管理员请求体",
+        "required": ["username", "password"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "maxLength": 20
+          },
+          "password": {
+            "type": "string",
+            "description": "密码",
+            "maxLength": 20
+          },
+          "adminType": {
+            "type": "integer",
+            "description": "管理员类型：0=普通, 1=超级管理员（不传默认 1）"
+          }
+        }
+      },
+      "ReaderInfo": {
+        "type": "object",
+        "description": "读者实体",
+        "properties": {
+          "id": { "type": "integer", "description": "读者 ID" },
+          "username": { "type": "string", "description": "用户名", "maxLength": 20 },
+          "password": {
+            "type": ["string", "null"],
+            "description": "密码（响应中为 null）"
+          },
+          "realName": { "type": "string", "description": "真实姓名", "maxLength": 20 },
+          "sex": { "type": "string", "description": "性别", "maxLength": 5 },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "description": "出生日期"
+          },
+          "address": { "type": "string", "description": "籍贯", "maxLength": 30 },
+          "tel": { "type": "string", "description": "电话", "maxLength": 11 },
+          "email": { "type": "string", "description": "邮箱", "maxLength": 15 },
+          "registerDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "注册日期"
+          },
+          "readerNumber": {
+            "type": "string",
+            "description": "读者编号（前缀 8120116 + 3 位流水号）",
+            "maxLength": 20
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "description": "登录请求体",
+        "required": ["username", "password", "role"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "description": "密码",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "description": "角色",
+            "enum": ["admin", "reader"]
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "description": "读者注册请求体",
+        "required": ["username", "password", "realName"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "description": "密码",
+            "minLength": 6,
+            "maxLength": 20
+          },
+          "realName": {
+            "type": "string",
+            "description": "真实姓名",
+            "minLength": 1
+          },
+          "sex": {
+            "type": "string",
+            "description": "性别"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "description": "出生日期"
+          },
+          "address": {
+            "type": "string",
+            "description": "籍贯"
+          },
+          "tel": {
+            "type": "string",
+            "description": "电话"
+          },
+          "email": {
+            "type": "string",
+            "description": "邮箱"
+          }
+        }
+      }
+    }
+  }
+}

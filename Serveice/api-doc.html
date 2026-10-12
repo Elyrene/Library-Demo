@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>图书馆管理系统 — API 文档</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;color:#212529;background:#f8f9fa;line-height:1.6}
+.hdr{background:#1a1a2e;color:#fff;padding:32px 24px;text-align:center}
+.hdr h1{font-size:1.6rem;margin-bottom:4px}
+.hdr p{color:#8892b0;font-size:.9rem}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 48px}
+.info{background:#fff;border-radius:10px;padding:20px 24px;margin-bottom:20px;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+.info h2{font-size:1.05rem;margin-bottom:8px;color:#1a1a2e}
+.info table{width:100%;border-collapse:collapse;font-size:.85rem}
+.info th,.info td{border:1px solid #e9ecef;padding:6px 10px;text-align:left}
+.info th{background:#f1f3f5;font-weight:600}
+.grp{margin-bottom:24px}
+.grp>h2{font-size:1.15rem;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #dee2e6}
+.ep{background:#fff;border-radius:8px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.04);overflow:hidden}
+.ep-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer}
+.ep-hd:hover{background:#f8f9fa}
+.m{display:inline-block;padding:2px 10px;border-radius:4px;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0}
+.m.g{background:#2d8cf0}.m.p{background:#19be6b}.m.u{background:#ff9900}.m.d{background:#ed4014}
+.ep-path{font-family:Consolas,monospace;font-size:.88rem;font-weight:600;word-break:break-all}
+.ep-body{display:none;padding:0 16px 16px;border-top:1px solid #f1f3f5}
+.ep.open .ep-body{display:block}
+.desc{font-size:.88rem;color:#495057;margin:8px 0 12px}
+.params{margin:8px 0}
+.params th,.params td{border:1px solid #e9ecef;padding:5px 8px;font-size:.82rem;text-align:left}
+.params th{background:#f1f3f5}
+.req{color:#dc3545;font-weight:700}
+.code{background:#212529;color:#a5f3fc;border-radius:6px;padding:12px 16px;font-family:Consolas,monospace;font-size:.82rem;white-space:pre;overflow-x:auto;margin:8px 0}
+.note{background:#fff3cd;border-left:4px solid #ffc107;padding:8px 12px;font-size:.84rem;border-radius:0 6px 6px 0;margin:8px 0}
+.sch{margin-top:8px}
+.sch h3{font-size:.95rem;margin-bottom:6px;color:#1a1a2e}
+</style>
+</head>
+<body>
+<div class="hdr">
+<h1>图书馆管理系统 — 后端 API</h1>
+<p>Spring Boot 3 + MyBatis + MySQL · OpenAPI 3.0</p>
+</div>
+<div class="wrap">
+
+<div class="info">
+<h2>通用说明</h2>
+<table>
+<tr><th>项</th><th>说明</th></tr>
+<tr><td>Base URL</td><td><code>http://localhost:8080</code></td></tr>
+<tr><td>认证</td><td>Session（Cookie）。登录成功后写入 <code>HttpSession</code>，后续请求需携带 Cookie（<code>withCredentials: true</code>）</td></tr>
+<tr><td>响应格式</td><td><code>{"code": 0, "mes": "ok", "count": 10, "data": {...}}</code><br/>code: 0=成功, -1=失败 · null 字段不序列化</td></tr>
+</table>
+</div>
+
+<div class="grp"><h2>🔐 认证 /api/auth</h2>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m p">POST</span><span class="ep-path">/api/auth/login</span></div>
+<div class="ep-body"><p class="desc">用户登录。根据 role 区分管理员/读者，成功后将用户对象和角色写入 Session。</p>
+<table class="params"><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td>username</td><td>string</td><td class="req">是</td><td>用户名</td></tr>
+<tr><td>password</td><td>string</td><td class="req">是</td><td>密码</td></tr>
+<tr><td>role</td><td>string</td><td class="req">是</td><td>枚举：<code>admin</code> | <code>reader</code></td></tr>
+</table>
+<p class="desc"><b>请求示例</b></p><div class="code">{ "username": "admin", "password": "admin123", "role": "admin" }</div>
+<p class="desc"><b>响应 — 成功</b></p><div class="code">{ "code": 0, "mes": "ok" }</div>
+<p class="desc"><b>响应 — 失败</b></p><div class="code">{ "code": -1, "mes": "账户或者密码错误" }</div>
+</div></div>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m p">POST</span><span class="ep-path">/api/auth/logout</span></div>
+<div class="ep-body"><p class="desc">登出。清除 Session 中的用户信息并使 Session 失效。</p>
+<p class="desc"><b>响应</b></p><div class="code">{ "code": 0, "mes": "ok" }</div>
+</div></div>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m g">GET</span><span class="ep-path">/api/auth/me</span></div>
+<div class="ep-body"><p class="desc">获取当前登录用户（不含密码）。未登录时返回失败。</p>
+<p class="desc"><b>响应 — 管理员</b></p><div class="code">{
+  "code": 0, "mes": "ok",
+  "data": { "role": "admin", "user": { "id": 1, "username": "admin", "adminType": 1 } }
+}</div>
+<p class="desc"><b>响应 — 读者</b></p><div class="code">{
+  "code": 0, "mes": "ok",
+  "data": {
+    "role": "reader",
+    "user": {
+      "id": 1, "username": "zhangsan", "realName": "张三",
+      "sex": "男", "birthday": "2001-04-01", "address": "江西南昌",
+      "tel": "13767134834", "email": "zhangsan@163.com",
+      "registerDate": "2025-01-15T10:30:00.000+08:00",
+      "readerNumber": "8120116001"
+    }
+  }
+}</div>
+<p class="desc"><b>响应 — 未登录</b></p><div class="code">{ "code": -1, "mes": "未登录" }</div>
+</div></div>
+</div>
+
+<div class="grp"><h2>👤 管理员 /api/admins</h2>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m g">GET</span><span class="ep-path">/api/admins</span></div>
+<div class="ep-body"><p class="desc">分页查询管理员列表，支持用户名模糊搜索和类型筛选。password 字段始终为 null。</p>
+<table class="params"><tr><th>参数</th><th>类型</th><th>必填</th><th>默认</th><th>说明</th></tr>
+<tr><td>pageNum</td><td>int</td><td>否</td><td>1</td><td>页码（从 1 开始）</td></tr>
+<tr><td>limit</td><td>int</td><td>否</td><td>10</td><td>每页条数</td></tr>
+<tr><td>username</td><td>string</td><td>否</td><td>—</td><td>用户名（模糊匹配）</td></tr>
+<tr><td>adminType</td><td>int</td><td>否</td><td>—</td><td>0=普通, 1=超级管理员</td></tr>
+</table>
+<p class="desc"><b>响应</b></p><div class="code">{
+  "code": 0, "mes": "ok", "count": 3,
+  "data": [
+    { "id": 1, "username": "admin", "adminType": 1 },
+    { "id": 2, "username": "qqwer", "adminType": 0 }
+  ]
+}</div>
+</div></div>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m g">GET</span><span class="ep-path">/api/admins/{id}</span></div>
+<div class="ep-body"><p class="desc">根据 ID 查询管理员。password 为 null。</p>
+<p class="desc"><b>响应 — 成功</b></p><div class="code">{ "code": 0, "mes": "ok", "data": { "id": 1, "username": "admin", "adminType": 1 } }</div>
+<p class="desc"><b>响应 — 未找到</b></p><div class="code">{ "code": -1, "mes": "管理员不存在" }</div>
+</div></div>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m p">POST</span><span class="ep-path">/api/admins</span></div>
+<div class="ep-body"><p class="desc">新增管理员。adminType 不传默认 1（超级管理员）。</p>
+<table class="params"><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td>username</td><td>string</td><td class="req">是</td><td>用户名（≤20）</td></tr>
+<tr><td>password</td><td>string</td><td class="req">是</td><td>密码（≤20）</td></tr>
+<tr><td>adminType</td><td>int</td><td>否</td><td>0=普通, 1=超级（默认 1）</td></tr>
+</table>
+<p class="desc"><b>请求示例</b></p><div class="code">{ "username": "newadmin", "password": "123456", "adminType": 0 }</div>
+<div class="note">⚠️ 已知缺陷：用户名重复时返回 <code>"用户名不存在"</code>（应为"已存在"）</div>
+<p class="desc"><b>响应</b></p><div class="code">{ "code": 0, "mes": "ok" }</div>
+</div></div>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m u">PUT</span><span class="ep-path">/api/admins/{id}/password</span></div>
+<div class="ep-body"><p class="desc">修改管理员密码。</p>
+<div class="note">⚠️ 已知缺陷：AdminMapper.xml 中未定义 updatePassword SQL，运行时会抛 BindingException（HTTP 500）</div>
+<table class="params"><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td>password</td><td>string</td><td class="req">是</td><td>新密码</td></tr>
+</table>
+<p class="desc"><b>请求示例</b></p><div class="code">{ "password": "newpass123" }</div>
+</div></div>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m d">DELETE</span><span class="ep-path">/api/admins</span></div>
+<div class="ep-body"><p class="desc">批量删除管理员。请求体为 ID 数组。</p>
+<p class="desc"><b>请求示例</b></p><div class="code">[1, 2, 3]</div>
+<p class="desc"><b>响应 — 空数组</b></p><div class="code">{ "code": -1, "mes": "请选择要删除的管理员" }</div>
+</div></div>
+</div>
+
+<div class="grp"><h2>📖 读者 /api/readers</h2>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m g">GET</span><span class="ep-path">/api/readers/{id}</span></div>
+<div class="ep-body"><p class="desc">根据 ID 查询读者。password 为 null。</p>
+<p class="desc"><b>响应 — 成功</b></p><div class="code">{
+  "code": 0, "mes": "ok",
+  "data": {
+    "id": 1, "username": "zhangsan", "realName": "张三",
+    "sex": "男", "birthday": "2001-04-01", "address": "江西南昌",
+    "tel": "13767134834", "email": "zhangsan@163.com",
+    "registerDate": "2025-01-15T10:30:00.000+08:00",
+    "readerNumber": "8120116001"
+  }
+}</div>
+<p class="desc"><b>响应 — 未找到</b></p><div class="code">{ "code": -1, "mes": "读者不存在" }</div>
+</div></div>
+
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m p">POST</span><span class="ep-path">/api/readers/register</span></div>
+<div class="ep-body"><p class="desc">读者注册。自动生成读者编号（前缀 8120116 + 3 位流水号）。</p>
+<table class="params"><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td>username</td><td>string</td><td class="req">是</td><td>用户名</td></tr>
+<tr><td>password</td><td>string</td><td class="req">是</td><td>密码（6–20 位）</td></tr>
+<tr><td>realName</td><td>string</td><td class="req">是</td><td>真实姓名</td></tr>
+<tr><td>sex</td><td>string</td><td>否</td><td>性别</td></tr>
+<tr><td>birthday</td><td>date</td><td>否</td><td>出生日期（YYYY-MM-DD）</td></tr>
+<tr><td>address</td><td>string</td><td>否</td><td>籍贯</td></tr>
+<tr><td>tel</td><td>string</td><td>否</td><td>电话（≤11 位）</td></tr>
+<tr><td>email</td><td>string</td><td>否</td><td>邮箱（≤15 位）</td></tr>
+</table>
+<p class="desc"><b>请求示例</b></p><div class="code">{
+  "username": "zhangsan", "password": "123456", "realName": "张三",
+  "sex": "男", "birthday": "2001-04-01",
+  "address": "江西南昌", "tel": "13767134834", "email": "zhangsan@163.com"
+}</div>
+<div class="note">⚠️ 用户名重复时返回 <code>"用户名已经存在"</code>。序号超过 999 时编号会溢出为 4 位。</div>
+<p class="desc"><b>响应</b></p><div class="code">{ "code": 0, "mes": "ok" }</div>
+</div></div>
+</div>
+
+<div class="grp"><h2>📋 数据模型</h2>
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m g">SCHEMA</span><span class="ep-path">DataInfo&lt;T&gt; — 统一响应体</span></div>
+<div class="ep-body">
+<table class="params"><tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>code</td><td>int</td><td>0=成功, -1=失败</td></tr>
+<tr><td>mes</td><td>string</td><td>消息</td></tr>
+<tr><td>count</td><td>long</td><td>分页总数（仅分页接口）</td></tr>
+<tr><td>data</td><td>any</td><td>数据体</td></tr>
+</table>
+</div></div>
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m g">SCHEMA</span><span class="ep-path">Admin — 管理员</span></div>
+<div class="ep-body">
+<table class="params"><tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>int</td><td>主键</td></tr>
+<tr><td>username</td><td>string(20)</td><td>用户名</td></tr>
+<tr><td>password</td><td>string(20)</td><td>密码（响应中为 null）</td></tr>
+<tr><td>adminType</td><td>int</td><td>0=普通, 1=超级</td></tr>
+</table>
+</div></div>
+<div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m g">SCHEMA</span><span class="ep-path">ReaderInfo — 读者</span></div>
+<div class="ep-body">
+<table class="params"><tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>int</td><td>主键</td></tr>
+<tr><td>username</td><td>string(20)</td><td>用户名</td></tr>
+<tr><td>password</td><td>string(20)</td><td>密码（响应中为 null）</td></tr>
+<tr><td>realName</td><td>string(20)</td><td>真实姓名</td></tr>
+<tr><td>sex</td><td>string(5)</td><td>性别</td></tr>
+<tr><td>birthday</td><td>LocalDate</td><td>出生日期</td></tr>
+<tr><td>address</td><td>string(30)</td><td>籍贯</td></tr>
+<tr><td>tel</td><td>string(11)</td><td>电话</td></tr>
+<tr><td>email</td><td>string(15)</td><td>邮箱</td></tr>
+<tr><td>registerDate</td><td>Date</td><td>注册日期</td></tr>
+<tr><td>readerNumber</td><td>string(20)</td><td>读者编号（8120116+3位）</td></tr>
+</table>
+</div></div>
+</div>
+
+</div>
+<script>
+function tg(hd){var ep=hd.parentElement;ep.classList.toggle('open')}
+document.querySelectorAll('.ep-hd').forEach(function(h){h.parentElement.classList.add('open')})
+</script>
+</body>
+</html>
