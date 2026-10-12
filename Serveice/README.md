@@ -9,11 +9,12 @@
 - [技术栈](#一技术栈)
 - [项目结构](#二项目结构)
 - [核心机制](#三核心机制)
-  - [统一响应体](#31-统一响应体-datainfot)
+  - [统一响应体](#31-统一响应体-datainfo)
   - [认证方式](#32-认证方式session-cookie)
-  - [分页机制](#33-分页机制pagehelper)
-  - [全局异常处理](#34-全局异常处理)
-  - [读者编号生成](#35-读者编号生成)
+  - [登录拦截器](#33-登录拦截器)
+  - [分页机制](#34-分页机制pagehelper)
+  - [全局异常处理](#35-全局异常处理)
+  - [读者编号生成](#36-读者编号生成)
 - [接口列表](#四接口列表)
 - [已知缺陷](#五已知缺陷)
 - [启动方式](#六启动方式)
@@ -27,50 +28,52 @@
 | 组件 | 版本 / 说明 |
 |------|------------|
 | Java | 17 |
-| Spring Boot | 3.x（web / validation / aop） |
-| MyBatis | 2.3.x（spring-boot-starter） |
-| MySQL | 8.0.33，驱动 `com.mysql.cj.jdbc.Driver` |
-| PageHelper | 1.4.7（分页插件） |
-| Lombok | 1.18.30（`@Data` 等） |
+| Spring Boot | 3.5（web / validation / test） |
+| MyBatis | mybatis-spring-boot-starter 3.0.3 |
+| MySQL | 8.0，驱动 `com.mysql.cj.jdbc.Driver` |
+| PageHelper | pagehelper-spring-boot-starter 2.1.1 |
+| Lombok | `@Data` 等 |
 | 构建 | Maven |
-| 数据库 | MySQL 8（`mydb`，UTF8MB4） |
+| 数据库 | MySQL 8（`library_db`，UTF8MB4） |
 
 ---
 
 ## 二、项目结构
 
 ```
-src/main/java/com/library/
-├── LibraryServiceApplication.java        # 启动类（@MapperScan）
+src/main/java/com/Library/
+├── app/
+│   └── ServeiceApplication.java            # 启动类（@MapperScan("com.Library.mapper")）
 ├── config/
-│   ├── GlobalExceptionHandler.java       # 全局异常 → DataInfo
-│   └── MyBatisPlusConfig.java            # PageHelper 分页拦截器
+│   ├── WebConfig.java                      # CORS 配置 + 注册登录拦截器
+│   ├── AuthInterceptor.java                # 登录校验拦截器（未登录返回 401）
+│   └── GlobalExceptionHandler.java         # 全局异常 → DataInfo
 ├── controller/
-│   ├── AuthController.java               # /api/auth  登录 / 登出 / 当前用户
-│   ├── AdminController.java              # /api/admins  管理员 CRUD
-│   └── ReaderController.java             # /api/readers  读者注册 / 查询
-├── dao/
-│   ├── AdminMapper.java                  # 管理员 Mapper（5 个方法）
-│   ├── ReaderInfoMapper.java             # 读者 Mapper（4 个方法）
-│   └── BookMapper.java                   # 书籍 Mapper（仅定义，未使用）
+│   ├── AuthController.java                 # /api/auth  登录 / 登出 / 当前用户
+│   ├── AdminController.java                # /api/admins  管理员 CRUD
+│   └── ReaderController.java               # /api/readers  读者注册 / 查询
+├── mapper/
+│   ├── AdminMapper.java                    # 管理员 Mapper（6 个方法）
+│   └── ReaderInfoMapper.java               # 读者 Mapper（4 个方法）
 ├── entity/
-│   ├── Admin.java                        # 管理员实体
-│   └── ReaderInfo.java                   # 读者实体
-├── pojo/
-│   ├── DataInfo.java                     # 统一响应体
-│   └── dto/
-│       ├── LoginRequest.java             # 登录 DTO
-│       └── RegisterRequest.java          # 注册 DTO
-└── util/
-    └── GenerateReaderNumberUtil.java     # 读者编号生成器
+│   ├── Admin.java                          # 管理员实体
+│   └── ReaderInfo.java                     # 读者实体
+├── controller/dto/
+│   ├── LoginRequest.java                   # 登录 DTO
+│   └── RegisterRequest.java                # 注册 DTO
+└── common/
+    ├── DataInfo.java                       # 统一响应体
+    ├── Contants.java                       # Session key 常量
+    └── GlobalExceptionHandler.java         # 全局异常处理
 
 src/main/resources/
-├── application.yml                       # 数据源 / 端口 / 日志
+├── application.yml                         # 数据源 / 端口 / MyBatis / PageHelper
 └── mapper/
-    ├── AdminMapper.xml                   # 管理员 SQL
-    ├── ReaderInfoMapper.xml              # 读者 SQL
-    └── BookMapper.xml                    # 书籍 SQL（仅定义，未使用）
+    ├── AdminMapper.xml                     # 管理员 SQL
+    └── ReaderInfoMapper.xml                # 读者 SQL
 ```
+
+> 注意：实际包根为 `com.Library`（大写 L），启动类在 `com.Library.app` 下；Mapper 接口位于 `com.Library.mapper`，实体位于 `com.Library.entity`，公共类位于 `com.Library.common`，配置位于 `com.Library.config`。
 
 ---
 
@@ -80,7 +83,7 @@ src/main/resources/
 
 ```json
 {
-  "code": 0,          // 0 = 成功，-1 = 失败
+  "code": 0,          // 0 = 成功，-1 = 业务失败，401 = 未登录
   "mes": "ok",
   "count": 10,        // 分页总数（仅分页接口）
   "data": { ... }
@@ -92,22 +95,31 @@ src/main/resources/
 
 ### 3.2 认证方式：Session（Cookie）
 
-- 登录成功后，将用户对象 + 角色写入 `HttpSession`（key 分别为 `user`、`role`）。
+- 登录成功后，将用户对象 + 角色写入 `HttpSession`（key 分别为 `user`、`type`，见 `Contants`）。
 - 后续请求需携带 Cookie（前端 `withCredentials: true`）。
-- **无拦截器**：未登录访问受保护接口时，`session.getAttribute("user")` 返回 `null`，由 Controller 判断后返回 `DataInfo.fail("未登录")`。
+- 角色值：`"admin"` 或 `"reader"`，由登录时 `LoginRequest.role` 决定。
 
-### 3.3 分页机制（PageHelper）
+### 3.3 登录拦截器
+
+`AuthInterceptor`（注册于 `WebConfig.addInterceptors`）：
+
+- **保护范围**：`/api/admins/**`、`/api/readers/**`
+- **放行范围**：`/api/auth/**`（登录、登出、`/me`）、`OPTIONS` 预检请求
+- 校验逻辑：Session 中无 `user` 时，直接返回 **HTTP 401** + `{"code":401,"mes":"未登录或登录已过期"}`，无需各 Controller 重复判断
+- 已登录用户正常通过，由 Controller 继续业务逻辑
+
+### 3.4 分页机制（PageHelper）
 
 ```java
 PageHelper.startPage(pageNum, limit);
-List<Admin> list = adminMapper.findAll(admin);
+List<Admin> list = adminMapper.queryAll(username, adminType);
 long total = new PageInfo<>(list).getTotal();
 ```
 
 - `pageNum` 从 **1** 开始，`limit` 为每页条数。
 - 返回 `DataInfo.ok(list, total)`，前端据此计算总页数。
 
-### 3.4 全局异常处理
+### 3.5 全局异常处理
 
 `GlobalExceptionHandler` 捕获所有未处理异常，统一返回：
 
@@ -115,37 +127,38 @@ long total = new PageInfo<>(list).getTotal();
 { "code": -1, "mes": "服务器内部错误，请稍后重试" }
 ```
 
-### 3.5 读者编号生成
+### 3.6 读者编号生成
 
-`GenerateReaderNumberUtil`：
+`ReaderController.generateReaderNumber()`：
 
 - 前缀：`8120116`
-- 后缀：从 `SELECT MAX(CAST(readerNumber AS UNSIGNED)) FROM reader_info` 取最大值，+1 后格式化为 **3 位**（`%03d`）。
+- 后缀：从 `SELECT MAX(readerNumber) FROM reader_info` 取最大值，流水号 +1 后格式化为 **3 位**（`%03d`）。
+- 表为空时从 `001` 开始。
 - ⚠️ 当序号超过 999 时会溢出为 4 位（`1000`），后续递增正常。
 
 ---
 
 ## 四、接口列表
 
-### 认证 `/api/auth`
+### 认证 `/api/auth`（无需登录）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/login` | 登录（按 role 区分管理员 / 读者） |
+| POST | `/login` | 登录（按 `role` 区分管理员 / 读者） |
 | POST | `/logout` | 登出（清除 Session） |
 | GET | `/me` | 获取当前登录用户 |
 
-### 管理员 `/api/admins`
+### 管理员 `/api/admins`（需登录）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `` | 分页查询（支持 username 模糊搜索、adminType 筛选） |
+| GET | `` | 分页查询（支持 `username` 模糊搜索、`adminType` 筛选） |
 | GET | `/{id}` | 按 ID 查询 |
-| POST | `` | 新增（adminType 默认 1） |
-| PUT | `/{id}/password` | 修改密码 |
-| DELETE | `` | 批量删除（body: `List<Integer>`） |
+| POST | `` | 新增（`adminType` 默认 1；用户名重复时返回"用户名已存在"） |
+| PUT | `/{id}/password` | 修改密码（body: `{"password": "..."}`） |
+| DELETE | `` | 批量删除（body: `List<Integer>` ids） |
 
-### 读者 `/api/readers`
+### 读者 `/api/readers`（需登录）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -160,11 +173,13 @@ long total = new PageInfo<>(list).getTotal();
 
 | # | 位置 | 描述 |
 |---|------|------|
-| 1 | `AdminController.addAdmin` | 用户名重复时返回 `"用户名不存在"`，应为 `"用户名已存在"` |
-| 2 | `AdminMapper.xml` | **缺少 `updatePassword` 的 SQL**，调用 `PUT /api/admins/{id}/password` 会抛 `BindingException`（HTTP 500） |
-| 3 | `application.yml` | 数据源密码硬编码（`123456`），应移至环境变量 |
-| 4 | 安全 | 无登录拦截器，未登录访问 `/api/auth/me` 仅返回 `DataInfo.fail`，其他接口理论上可被未认证访问（取决于 Controller 内是否校验 Session） |
-| 5 | `BookMapper` | 已定义但完全未使用（无对应 Service / Controller） |
+| 1 | ~~`AdminController.add`~~ | ✅ 已修复：用户名重复时原返回 `"用户名不存在"`，已改为 `"用户名已存在"` |
+| 2 | ~~`AdminMapper.xml`~~ | ✅ 已修复：原缺少 `updatePassword` 的 SQL（调用 `PUT /api/admins/{id}/password` 会抛 `BindingException`），已补充 `<update>` 语句 |
+| 3 | `application.yml` | 数据源账号密码硬编码（`Library_db` / `Library_db`），应移至环境变量 |
+| 4 | ~~安全~~ | ✅ 已修复：原无登录拦截器，`/api/admins`、`/api/readers` 可被未认证访问；已新增 `AuthInterceptor` 统一拦截，未登录返回 401 |
+| 5 | `BookMapper` | ⚠️ 当前代码中不存在 `BookMapper`（README 旧版曾提及，实际未创建），如后续需要书籍管理需自行补充 |
+| 6 | `application.yml` | 数据库连接信息（库名 `library_db`、用户名、密码）仍为硬编码，建议迁移至环境变量或外部配置 |
+| 7 | 细粒度权限 | 拦截器仅校验「是否登录」，未区分角色；如需「仅管理员可访问 `/api/admins`」需进一步扩展 `AuthInterceptor`（读取 `Contants.SESSION_TYPE` 比对） |
 
 ---
 
@@ -173,12 +188,12 @@ long total = new PageInfo<>(list).getTotal();
 ```bash
 # 1. 确保 MySQL 运行，并创建数据库
 mysql -u root -p
-CREATE DATABASE IF NOT EXISTS mydb DEFAULT CHARSET utf8mb4;
+CREATE DATABASE IF NOT EXISTS library_db DEFAULT CHARSET utf8mb4;
 
-# 2. 导入初始数据（含 admin 表 + 样例读者）
-mysql -u root -p mydb < src/main/resources/sql/init_data.sql
+# 2. 导入初始数据（admin 表 + reader_info 表 + 样例数据）
+#    ⚠️ 当前仓库未提供 init_data.sql，需自行准备表结构与初始数据
 
-# 3. 修改 application.yml 中的数据源密码（如需要）
+# 3. 确认 application.yml 中的数据源配置（默认 library_db / Library_db / Library_db）
 
 # 4. 启动
 mvn spring-boot:run
@@ -192,8 +207,10 @@ mvn spring-boot:run
 
 ## 七、初始数据
 
-`src/main/resources/sql/init_data.sql`：
+> ⚠️ 当前仓库 `src/main/resources/sql/` 目录不存在，旧版 README 引用的 `init_data.sql` 缺失。
+> 需自行准备 `admin` 表与 `reader_info` 表的建表语句及初始数据。
 
+参考初始账号（需自行建表插入）：
 - **管理员**：`admin / admin123`（adminType=1）
 - **读者**：`zhangsan / 123456`（张三，编号 `8120116001`）
 

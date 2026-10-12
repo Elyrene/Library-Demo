@@ -50,7 +50,8 @@ body{font-family:system-ui,-apple-system,sans-serif;color:#212529;background:#f8
 <tr><th>项</th><th>说明</th></tr>
 <tr><td>Base URL</td><td><code>http://localhost:8080</code></td></tr>
 <tr><td>认证</td><td>Session（Cookie）。登录成功后写入 <code>HttpSession</code>，后续请求需携带 Cookie（<code>withCredentials: true</code>）</td></tr>
-<tr><td>响应格式</td><td><code>{"code": 0, "mes": "ok", "count": 10, "data": {...}}</code><br/>code: 0=成功, -1=失败 · null 字段不序列化</td></tr>
+<tr><td>响应格式</td><td><code>{"code": 0, "mes": "ok", "count": 10, "data": {...}}</code><br/>code: 0=成功, -1=业务失败, 401=未登录 · null 字段不序列化</td></tr>
+<tr><td>登录拦截器</td><td><code>/api/admins/**</code> 与 <code>/api/readers/**</code> 需登录，未登录返回 <b>HTTP 401</b> + <code>{"code":401,"mes":"未登录或登录已过期"}</code>。<br/><code>/api/auth/**</code> 不受拦截。</td></tr>
 </table>
 </div>
 
@@ -129,13 +130,13 @@ body{font-family:system-ui,-apple-system,sans-serif;color:#212529;background:#f8
 <tr><td>adminType</td><td>int</td><td>否</td><td>0=普通, 1=超级（默认 1）</td></tr>
 </table>
 <p class="desc"><b>请求示例</b></p><div class="code">{ "username": "newadmin", "password": "123456", "adminType": 0 }</div>
-<div class="note">⚠️ 已知缺陷：用户名重复时返回 <code>"用户名不存在"</code>（应为"已存在"）</div>
+<div class="note">用户名重复时返回 <code>{"code": -1, "mes": "用户名已存在"}</code></div>
 <p class="desc"><b>响应</b></p><div class="code">{ "code": 0, "mes": "ok" }</div>
 </div></div>
 
 <div class="ep"><div class="ep-hd" onclick="tg(this)"><span class="m u">PUT</span><span class="ep-path">/api/admins/{id}/password</span></div>
 <div class="ep-body"><p class="desc">修改管理员密码。</p>
-<div class="note">⚠️ 已知缺陷：AdminMapper.xml 中未定义 updatePassword SQL，运行时会抛 BindingException（HTTP 500）</div>
+<div class="note">通过 body 传入新密码（<code>{"password": "..."}</code>），将指定管理员的密码更新为新值。</div>
 <table class="params"><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
 <tr><td>password</td><td>string</td><td class="req">是</td><td>新密码</td></tr>
 </table>

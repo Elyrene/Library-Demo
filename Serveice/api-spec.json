@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "图书馆管理系统 — 后端 API",
-    "description": "基于 Spring Boot 3 + MyBatis + MySQL 的图书馆管理系统后端接口文档。\n\n**认证方式**：Session（Cookie）。登录后服务端将用户对象与角色写入 `HttpSession`，后续请求需携带 Cookie（前端 `withCredentials: true`）。\n\n**统一响应格式**：所有接口返回 `DataInfo<T>` 结构：\n\n| 字段 | 类型 | 说明 |\n|------|------|------|\n| code | int | `0` = 成功，`-1` = 失败 |\n| mes | string | 消息 |\n| count | long | 分页总数（仅分页接口返回） |\n| data | any | 数据体 |\n\n> `@JsonInclude(NON_NULL)`：值为 `null` 的字段不会出现在 JSON 中。",
+    "description": "基于 Spring Boot 3 + MyBatis + MySQL 的图书馆管理系统后端接口文档。\n\n**认证方式**：Session（Cookie）。登录后服务端将用户对象与角色写入 `HttpSession`，后续请求需携带 Cookie（前端 `withCredentials: true`）。\n\n**登录拦截器**：`/api/admins/**` 与 `/api/readers/**` 需登录，未登录时直接返回 HTTP 401 + `{\"code\":401,\"mes\":\"未登录或登录已过期\"}`。`/api/auth/**` 不受拦截。\n\n**统一响应格式**：所有接口返回 `DataInfo<T>` 结构：\n\n| 字段 | 类型 | 说明 |\n|------|------|------|\n| code | int | `0` = 成功，`-1` = 业务失败，`401` = 未登录 |\n| mes | string | 消息 |\n| count | long | 分页总数（仅分页接口返回） |\n| data | any | 数据体 |\n\n> `@JsonInclude(NON_NULL)`：值为 `null` 的字段不会出现在 JSON 中。",
     "version": "1.0.0",
     "contact": { "name": "Library Service" }
   },
@@ -190,7 +190,7 @@
       "post": {
         "tags": ["管理员"],
         "summary": "新增管理员",
-        "description": "若 `adminType` 未传则默认为 `1`（超级管理员）。用户名重复时返回失败（⚠️ 当前提示文案有误，显示\"用户名不存在\"，实际应为\"用户名已存在\"）。",
+        "description": "若 `adminType` 未传则默认为 `1`（超级管理员）。用户名重复时返回失败（code -1，mes \"用户名已存在\"）。",
         "operationId": "addAdmin",
         "requestBody": {
           "required": true,
@@ -216,8 +216,8 @@
                     "value": { "code": 0, "mes": "ok" }
                   },
                   "duplicate": {
-                    "summary": "用户名已存在（⚠️ 提示文案有误）",
-                    "value": { "code": -1, "mes": "用户名不存在" }
+                    "summary": "用户名已存在",
+                    "value": { "code": -1, "mes": "用户名已存在" }
                   },
                   "fail": {
                     "value": { "code": -1, "mes": "新增失败" }
@@ -307,7 +307,7 @@
       "put": {
         "tags": ["管理员"],
         "summary": "修改管理员密码",
-        "description": "⚠️ **已知缺陷**：`AdminMapper.xml` 中未定义 `updatePassword` 的 SQL，运行时会抛出 `BindingException`（HTTP 500）。",
+        "description": "通过 body 传入新密码（`{\"password\": \"...\"}`），将指定管理员的密码更新为新值。",
         "operationId": "updateAdminPassword",
         "parameters": [
           {
