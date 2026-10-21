@@ -36,6 +36,7 @@ const handleLogin = async () => {
         const me = await api.get<AuthMeRes>("/api/auth/me");
         if (me.code === 0 && me.data) {
           const meRole = me.data.role;
+          UserStore.setRememberMe(rememberMe.value);
           UserStore.setRole(meRole);
           if (meRole === 'admin') {
             UserStore.setAdmin(me.data.user as adminInfo);
