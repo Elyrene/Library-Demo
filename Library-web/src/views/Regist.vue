@@ -19,29 +19,32 @@ const handleRegist = async () => {
   } else if (!realName.value.trim()) {
     message.value = "请输入真实姓名";
     return;
+  } else if (password.value.length < 6 || password.value.length > 20) {
+    message.value = "密码长度需为 6–20 位";
+    return;
   } else if (password.value !== confirmpassword.value) {
     message.value = "两次输入的密码不一致";
-    return
+    return;
   }
+  loading.value = true;
   try {
     const data = await api.post<ReadersRegisterRes>('/api/readers/register', {
-        username: username.value,
-        realName: realName.value,
-        password: password.value,
+      username: username.value.trim(),
+      realName: realName.value.trim(),
+      password: password.value,
     });
-    console.log(data);
-    if (data.code == 0) {
-      router.push('/');
-    } else if (data.code == -1) {
+    if (data.code === 0) {
+      message.value = "注册成功，正在跳转登录...";
+      setTimeout(() => router.push('/login'), 1200);
+    } else {
       message.value = data.mes;
     }
-  } catch (err) {
+  } catch {
     message.value = "网络错误，请稍后重试";
-    console.log(err);
   } finally {
     loading.value = false;
   }
-} 
+};
 </script>
 
 <template>

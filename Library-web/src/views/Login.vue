@@ -14,6 +14,8 @@ const username = ref<string>('');
 const password = ref<string>('');
 const loading = ref<boolean>(false);
 
+const rememberMe = ref<boolean>(false);
+
 const handleLogin = async () => {
   if (!username.value.trim() || !password.value) {
     message.value = "请输入用户名和密码";
@@ -24,36 +26,38 @@ const handleLogin = async () => {
   }
   loading.value = true;
   try {
-    const data = await api.post<AuthLoginRes>('/api/auth/login', {
+    const data = await api.post<AuthLoginRes>("/api/auth/login", {
       username: username.value.trim(),
       password: password.value,
       role: role.value,
     });
-    console.log(data);
     if (data.code === 0) {
       try {
-        const data = await api.get<AuthMeRes>('/api/auth/me');
-        console.log(data);
-        if (data.data.role === 'admim') {
-          UserStore.setRole("admin");
-          UserStore.setAdmin(data.data.user as adminInfo);
-        } else {
-          UserStore.setRole("reader");
-          UserStore.setReader(data.data.user as readerInfo);
+        const me = await api.get<AuthMeRes>("/api/auth/me");
+        if (me.code === 0 && me.data) {
+          const meRole = me.data.role;
+          UserStore.setRole(meRole);
+          if (meRole === 'admin') {
+            UserStore.setAdmin(me.data.user as adminInfo);
+          } else {
+            UserStore.setReader(me.data.user as readerInfo);
+          }
+          router.push('/home');
+          return;
         }
-      } catch (err) {
-        message.value = data.mes;
+        message.value = me.mes || "登录失败";
+      } catch {
+        message.value = "登录成功，但获取用户信息失败";
       }
-      router.push('/home');
-    } else if(data.code === -1) {
+    } else {
       message.value = data.mes;
     }
-  } catch(err) {
-    message.value = "网络异常，请稍后重试";
+  } catch {
+    message.value = "网络错误，请稍后重试";
   } finally {
     loading.value = false;
   }
-}
+};
 
 </script>
 
@@ -101,7 +105,7 @@ const handleLogin = async () => {
         
         <div class="form-options">
           <label class="checkbox-label">
-            <input type="checkbox"  />
+            <input type="checkbox" v-model="rememberMe" />
             <span>记住我</span>
           </label>
         </div>
@@ -113,7 +117,7 @@ const handleLogin = async () => {
       </div>
       
       <div class="login-footer">
-        <p>还没有账号？<a href="regist" class="register-link">立即注册</a></p>
+        <p>还没有账号？<router-link to="/regist" class="register-link">立即注册</router-link></p>
       </div>
     </div>
   </div>
