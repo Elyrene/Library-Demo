@@ -40,10 +40,12 @@ const handleLogin = async () => {
           UserStore.setRole(meRole);
           if (meRole === 'admin') {
             UserStore.setAdmin(me.data.user as adminInfo);
+            router.push('/admin/dashboard');
           } else {
             UserStore.setReader(me.data.user as readerInfo);
+            router.push('/reader/dashboard');
           }
-          router.push('/home');
+          return;
           return;
         }
         message.value = me.mes || "登录失败";
