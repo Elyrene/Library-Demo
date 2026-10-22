@@ -28,6 +28,62 @@ const router = createRouter({
       path: '/',
       redirect: '/home',
     },
+    // Reader section
+    {
+      path: '/reader',
+      component: () => import("../views/reader/ReaderLayout.vue"),
+      meta: { requiresAuth: true, role: 'reader' },
+      children: [
+        {
+          path: 'dashboard',
+          name: 'reader-dashboard',
+          component: () => import("../views/reader/Dashboard.vue"),
+        },
+        {
+          path: 'profile',
+          name: 'reader-profile',
+          component: () => import("../views/reader/Profile.vue"),
+        },
+        {
+          path: 'borrowed',
+          name: 'reader-borrowed',
+          component: () => import("../views/reader/BorrowedBooks.vue"),
+        },
+      ],
+    },
+    // Admin section
+    {
+      path: '/admin',
+      component: () => import("../views/admin/AdminLayout.vue"),
+      meta: { requiresAuth: true, role: 'admin' },
+      children: [
+        {
+          path: 'dashboard',
+          name: 'admin-dashboard',
+          component: () => import("../views/admin/Dashboard.vue"),
+        },
+        {
+          path: 'books',
+          name: 'admin-books',
+          component: () => import("../views/admin/Books.vue"),
+        },
+        {
+          path: 'admins',
+          name: 'admin-admins',
+          component: () => import("../views/admin/Admins.vue"),
+        },
+        {
+          path: 'readers',
+          name: 'admin-readers',
+          component: () => import("../views/admin/Readers.vue"),
+        },
+        {
+          path: 'password',
+          name: 'admin-password',
+          component: () => import("../views/admin/ChangePassword.vue"),
+        },
+      ],
+    },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
@@ -36,19 +92,19 @@ const router = createRouter({
   ],
 })
 
-// 全局路由守卫：登录拦截
+// Global route guard: login interception
 router.beforeEach(async (to) => {
   const userStore = useUserStore();
 
-  // 已登录但访问登录/注册页：回到首页，避免重复登录
+  // Logged in but visiting login/regist: go home
   if (userStore.isLoggedIn && to.meta.public) {
     return { name: 'home' };
   }
 
-  // 无需登录的公共页面（登录/注册）直接放行
+  // Public pages (login/regist) pass through
   if (to.meta.public) return true;
 
-  // 未登录：尝试用现有 cookie 恢复会话，失败则跳登录
+  // Not logged in: try to restore session from cookie, else redirect to login
   if (!userStore.isLoggedIn) {
     try {
       const data = await api.get<AuthMeRes>("/api/auth/me");
@@ -62,6 +118,11 @@ router.beforeEach(async (to) => {
       userStore.clearUser();
       return { name: 'login' };
     }
+  }
+
+  // Role check: reader/admin section access
+  if (to.meta.role && userStore.role !== to.meta.role) {
+    return { name: 'home' };
   }
 
   return true;

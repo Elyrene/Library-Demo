@@ -1,4 +1,4 @@
-interface AuthLoginRes {
+﻿interface AuthLoginRes {
     code: number;
     mes: string;
 }
@@ -20,4 +20,11 @@ interface AuthLogoutRes {
 interface ReadersRegisterRes {
     code: number;
     mes: string;
+}
+
+// GET /api/readers/{id} 响应
+interface ReadersIdRes {
+    code: number;
+    mes: string;
+    data: readerInfo;
 }
