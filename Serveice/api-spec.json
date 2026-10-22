@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "图书馆管理系统 — 后端 API",
-    "description": "基于 Spring Boot 3 + MyBatis + MySQL 的图书馆管理系统后端接口文档。\n\n**认证方式**：Session（Cookie）。登录后服务端将用户对象与角色写入 `HttpSession`，后续请求需携带 Cookie（前端 `withCredentials: true`）。\n\n**登录拦截器**：`/api/admins/**` 与 `/api/readers/**` 需登录，未登录时直接返回 HTTP 401 + `{\"code\":401,\"mes\":\"未登录或登录已过期\"}`。`/api/auth/**` 不受拦截。\n\n**统一响应格式**：所有接口返回 `DataInfo<T>` 结构：\n\n| 字段 | 类型 | 说明 |\n|------|------|------|\n| code | int | `0` = 成功，`-1` = 业务失败，`401` = 未登录 |\n| mes | string | 消息 |\n| count | long | 分页总数（仅分页接口返回） |\n| data | any | 数据体 |\n\n> `@JsonInclude(NON_NULL)`：值为 `null` 的字段不会出现在 JSON 中。",
+    "description": "基于 Spring Boot 3 + MyBatis + MySQL 的图书馆管理系统后端接口文档。\n\n**认证方式**：Session（Cookie）。登录后服务端将用户对象与角色写入 `HttpSession`，后续请求需携带 Cookie（前端 `withCredentials: true`）。\n\n**登录拦截器**：`/api/admins/**`、`/api/readers/**` 与 `/api/lends/**` 需登录，未登录时直接返回 HTTP 401 + `{\"code\":401,\"mes\":\"未登录或登录已过期\"}`。`/api/auth/**` 不受拦截。\n\n**统一响应格式**：所有接口返回 `DataInfo<T>` 结构：\n\n| 字段 | 类型 | 说明 |\n|------|------|------|\n| code | int | `0` = 成功，`-1` = 业务失败，`401` = 未登录 |\n| mes | string | 消息 |\n| count | long | 分页总数（仅分页接口返回） |\n| data | any | 数据体 |\n\n> `@JsonInclude(NON_NULL)`：值为 `null` 的字段不会出现在 JSON 中。",
     "version": "1.0.0",
     "contact": { "name": "Library Service" }
   },
@@ -15,7 +15,8 @@
   "tags": [
     { "name": "认证", "description": "登录 / 登出 / 当前用户" },
     { "name": "管理员", "description": "管理员 CRUD" },
-    { "name": "读者", "description": "读者注册 / 查询" }
+    { "name": "读者", "description": "读者注册 / 查询" },
+    { "name": "借阅", "description": "图书借阅、归还、查询、批量删除（需登录）" }
   ],
   "paths": {
     "/api/auth/login": {
@@ -450,6 +451,162 @@
           }
         }
       }
+    },
+
+    "/api/lends": {
+      "get": {
+        "tags": ["借阅"],
+        "summary": "分页查询借阅记录",
+        "description": "支持 `bookName` / `readerName` 模糊搜索、`backType` 筛选。返回 JOIN 后的 `bookName` / `bookAuthor` / `readerRealName` / `readerNumber`。",
+        "operationId": "listLends",
+        "parameters": [
+          { "name": "pageNum", "in": "query", "required": false, "schema": { "type": "integer", "default": 1 }, "description": "页码（从 1 开始）" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 10 }, "description": "每页条数" },
+          { "name": "bookName", "in": "query", "required": false, "schema": { "type": "string" }, "description": "书名模糊搜索" },
+          { "name": "readerName", "in": "query", "required": false, "schema": { "type": "string" }, "description": "读者姓名模糊搜索" },
+          { "name": "backType", "in": "query", "required": false, "schema": { "type": "integer" }, "description": "归还类型筛选" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataInfoLendList" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["借阅"],
+        "summary": "借书",
+        "description": "校验图书与读者存在、图书未被借出后插入借阅记录，并将图书状态置为已借出（status=1）。",
+        "operationId": "lendBook",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LendRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "成功 / 业务失败",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": { "value": { "code": 0, "mes": "ok" } },
+                  "book-loaned": { "value": { "code": -1, "mes": "该书已被借出，无法重复借阅" } },
+                  "not-found": { "value": { "code": -1, "mes": "图书不存在" } }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["借阅"],
+        "summary": "批量删除借阅记录",
+        "description": "body 为借阅记录 ID 数组，如 `[1, 2, 3]`。",
+        "operationId": "deleteLends",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "array", "items": { "type": "integer" } } } }
+        },
+        "responses": {
+          "200": {
+            "description": "成功 / 业务失败",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": { "value": { "code": 0, "mes": "ok" } },
+                  "empty": { "value": { "code": -1, "mes": "请选择要删除的借阅记录" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lends/{id}": {
+      "get": {
+        "tags": ["借阅"],
+        "summary": "查询借阅详情",
+        "operationId": "getLendById",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "借阅记录 ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功 / 业务失败",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoLend" },
+                "examples": {
+                  "success": { "value": { "code": 0, "mes": "ok", "data": { "id": 1, "bookId": 1, "readerId": 1, "lendDate": "2026-09-15T10:30:00", "bookName": "西游记", "readerRealName": "彭于晏" } } },
+                  "not-found": { "value": { "code": -1, "mes": "借阅记录不存在" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lends/{id}/back": {
+      "put": {
+        "tags": ["借阅"],
+        "summary": "还书",
+        "description": "设置归还日期、归还类型、备注，并将图书状态置为未借出（status=0）。已归还的记录不可重复操作。",
+        "operationId": "backLend",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "借阅记录 ID" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LendBackRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "成功 / 业务失败",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DataInfoVoid" },
+                "examples": {
+                  "success": { "value": { "code": 0, "mes": "ok" } },
+                  "already-backed": { "value": { "code": -1, "mes": "该记录已归还，请勿重复操作" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lends/reader/{readerId}": {
+      "get": {
+        "tags": ["借阅"],
+        "summary": "读者借阅历史",
+        "operationId": "listLendsByReader",
+        "parameters": [
+          { "name": "readerId", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "读者 ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataInfoLendList" } } }
+          }
+        }
+      }
+    },
+    "/api/lends/book/{bookId}": {
+      "get": {
+        "tags": ["借阅"],
+        "summary": "图书借阅记录",
+        "operationId": "listLendsByBook",
+        "parameters": [
+          { "name": "bookId", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "图书 ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataInfoLendList" } } }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -605,6 +762,62 @@
             "description": "读者编号（前缀 8120116 + 3 位流水号）",
             "maxLength": 20
           }
+        }
+      },
+      "LendList": {
+        "type": "object",
+        "description": "借阅记录（含 JOIN 展示字段）",
+        "properties": {
+          "id": { "type": "integer", "description": "借阅记录 ID" },
+          "bookId": { "type": "integer", "description": "图书 ID" },
+          "readerId": { "type": "integer", "description": "读者 ID" },
+          "lendDate": { "type": "string", "format": "date-time", "description": "借出日期" },
+          "backDate": { "type": ["string", "null"], "format": "date-time", "description": "归还日期（未归还时为 null）" },
+          "backType": { "type": ["integer", "null"], "description": "归还类型" },
+          "exceptRemarks": { "type": ["string", "null"], "description": "备注信息" },
+          "bookName": { "type": ["string", "null"], "description": "书名（JOIN）" },
+          "bookAuthor": { "type": ["string", "null"], "description": "作者（JOIN）" },
+          "readerRealName": { "type": ["string", "null"], "description": "读者真实姓名（JOIN）" },
+          "readerNumber": { "type": ["string", "null"], "description": "读者编号（JOIN）" }
+        }
+      },
+      "LendRequest": {
+        "type": "object",
+        "description": "借书请求体",
+        "required": ["bookId", "readerId"],
+        "properties": {
+          "bookId": { "type": "integer", "description": "图书 ID" },
+          "readerId": { "type": "integer", "description": "读者 ID" }
+        }
+      },
+      "LendBackRequest": {
+        "type": "object",
+        "description": "还书请求体",
+        "properties": {
+          "backType": { "type": "integer", "description": "归还类型" },
+          "exceptRemarks": { "type": "string", "description": "备注信息" }
+        }
+      },
+      "DataInfoLendList": {
+        "type": "object",
+        "description": "分页借阅记录列表响应",
+        "properties": {
+          "code": { "type": "integer", "enum": [0, -1] },
+          "mes": { "type": "string" },
+          "count": { "type": "integer", "format": "int64", "description": "总条数" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LendList" }
+          }
+        }
+      },
+      "DataInfoLend": {
+        "type": "object",
+        "description": "单条借阅记录响应",
+        "properties": {
+          "code": { "type": "integer", "enum": [0, -1] },
+          "mes": { "type": "string" },
+          "data": { "$ref": "#/components/schemas/LendList" }
         }
       },
       "LoginRequest": {

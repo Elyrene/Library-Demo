@@ -1,6 +1,6 @@
 # 图书馆管理系统 — 后端服务（Serveice）
 
-基于 **Spring Boot 3 + MyBatis + MySQL** 的图书馆管理系统后端，提供管理员与读者两种角色的认证、管理员 CRUD、读者注册与查询能力。
+基于 **Spring Boot 3 + MyBatis + MySQL** 的图书馆管理系统后端，提供管理员与读者两种角色的认证、管理员 CRUD、读者注册与查询、图书借阅与归还能力。
 
 ---
 
@@ -46,21 +46,32 @@ src/main/java/com/Library/
 │   └── ServeiceApplication.java            # 启动类（@MapperScan("com.Library.mapper")）
 ├── config/
 │   ├── WebConfig.java                      # CORS 配置 + 注册登录拦截器
-│   ├── AuthInterceptor.java                # 登录校验拦截器（未登录返回 401）
-│   └── GlobalExceptionHandler.java         # 全局异常 → DataInfo
+│   └── AuthInterceptor.java                # 登录校验拦截器（未登录返回 401）
 ├── controller/
-│   ├── AuthController.java                 # /api/auth  登录 / 登出 / 当前用户
+│   ├── AuthController.java                 # /api/auth    登录 / 登出 / 当前用户
 │   ├── AdminController.java                # /api/admins  管理员 CRUD
-│   └── ReaderController.java               # /api/readers  读者注册 / 查询
+│   ├── ReaderController.java               # /api/readers 读者注册 / 查询
+│   └── LendController.java                 # /api/lends   借阅 / 归还 / 查询 / 删除
+├── service/
+│   ├── LendService.java                    # 借阅服务接口
+│   └── impl/
+│       └── LendServiceImpl.java            # 借阅服务实现（借书 / 还书事务）
 ├── mapper/
 │   ├── AdminMapper.java                    # 管理员 Mapper（6 个方法）
-│   └── ReaderInfoMapper.java               # 读者 Mapper（4 个方法）
+│   ├── ReaderInfoMapper.java               # 读者 Mapper（4 个方法）
+│   ├── BookInfoMapper.java                 # 图书 Mapper（findById / queryAll / updateStatus）
+│   └── LendListMapper.java                 # 借阅记录 Mapper（queryAll / insert / updateBack / 等）
 ├── entity/
 │   ├── Admin.java                          # 管理员实体
-│   └── ReaderInfo.java                     # 读者实体
+│   ├── ReaderInfo.java                     # 读者实体
+│   ├── BookInfo.java                       # 图书实体（status 0未借出 / 1已借出）
+│   ├── LendList.java                       # 借阅记录实体（含 JOIN 展示字段）
+│   ├── Notice.java                         # 公告实体
+│   └── TypeInfo.java                       # 图书分类实体
 ├── controller/dto/
 │   ├── LoginRequest.java                   # 登录 DTO
-│   └── RegisterRequest.java                # 注册 DTO
+│   ├── RegisterRequest.java                # 注册 DTO
+│   └── LendRequest.java                    # 借阅请求 DTO（bookId, readerId）
 └── common/
     ├── DataInfo.java                       # 统一响应体
     ├── Contants.java                       # Session key 常量
@@ -69,8 +80,12 @@ src/main/java/com/Library/
 src/main/resources/
 ├── application.yml                         # 数据源 / 端口 / MyBatis / PageHelper
 └── mapper/
+    ├── Library.sql                         # 建库建表 + 种子数据脚本
     ├── AdminMapper.xml                     # 管理员 SQL
-    └── ReaderInfoMapper.xml                # 读者 SQL
+    ├── ReaderInfoMapper.xml                # 读者 SQL
+    ├── BookInfoMapper.xml                  # 图书 SQL
+    └── LendListMapper.xml                  # 借阅记录 SQL（JOIN book_info / reader_info）
+```
 ```
 
 > 注意：实际包根为 `com.Library`（大写 L），启动类在 `com.Library.app` 下；Mapper 接口位于 `com.Library.mapper`，实体位于 `com.Library.entity`，公共类位于 `com.Library.common`，配置位于 `com.Library.config`。
@@ -165,6 +180,18 @@ long total = new PageInfo<>(list).getTotal();
 | GET | `/{id}` | 按 ID 查询 |
 | POST | `/register` | 注册（自动生成读者编号） |
 
+### 借阅 `/api/lends`（需登录）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `` | 分页查询（支持 `bookName` / `readerName` 模糊搜索、`backType` 筛选） |
+| GET | `/{id}` | 按 ID 查询借阅详情 |
+| POST | `` | 借书（body: `{"bookId":1,"readerId":1}`，图书已借出时拒绝） |
+| PUT | `/{id}/back` | 还书（body: `{"backType":1,"exceptRemarks":""}`，已归还时拒绝） |
+| GET | `/reader/{readerId}` | 读者借阅历史 |
+| GET | `/book/{bookId}` | 图书借阅记录 |
+| DELETE | `` | 批量删除（body: `List<Integer>` ids） |
+
 > 完整参数 / 请求体 / 响应示例见 [api-spec.json](./api-spec.json) 或 [api-doc.html](./api-doc.html)。
 
 ---
@@ -177,7 +204,7 @@ long total = new PageInfo<>(list).getTotal();
 | 2 | ~~`AdminMapper.xml`~~ | ✅ 已修复：原缺少 `updatePassword` 的 SQL（调用 `PUT /api/admins/{id}/password` 会抛 `BindingException`），已补充 `<update>` 语句 |
 | 3 | `application.yml` | 数据源账号密码硬编码（`Library_db` / `Library_db`），应移至环境变量 |
 | 4 | ~~安全~~ | ✅ 已修复：原无登录拦截器，`/api/admins`、`/api/readers` 可被未认证访问；已新增 `AuthInterceptor` 统一拦截，未登录返回 401 |
-| 5 | `BookMapper` | ⚠️ 当前代码中不存在 `BookMapper`（README 旧版曾提及，实际未创建），如后续需要书籍管理需自行补充 |
+| 5 | ~~`BookMapper`~~ | ✅ 已补充：`BookInfoMapper` 已创建（findById / queryAll / updateStatus / updateStatusById） |
 | 6 | `application.yml` | 数据库连接信息（库名 `library_db`、用户名、密码）仍为硬编码，建议迁移至环境变量或外部配置 |
 | 7 | 细粒度权限 | 拦截器仅校验「是否登录」，未区分角色；如需「仅管理员可访问 `/api/admins`」需进一步扩展 `AuthInterceptor`（读取 `Contants.SESSION_TYPE` 比对） |
 
@@ -190,8 +217,8 @@ long total = new PageInfo<>(list).getTotal();
 mysql -u root -p
 CREATE DATABASE IF NOT EXISTS library_db DEFAULT CHARSET utf8mb4;
 
-# 2. 导入初始数据（admin 表 + reader_info 表 + 样例数据）
-#    ⚠️ 当前仓库未提供 init_data.sql，需自行准备表结构与初始数据
+# 2. 导入建库建表 + 种子数据（admin / reader_info / book_info / lend_list / notice / type_info）
+mysql -u root -p library_db < src/main/resources/mapper/Library.sql
 
 # 3. 确认 application.yml 中的数据源配置（默认 library_db / Library_db / Library_db）
 
@@ -207,12 +234,14 @@ mvn spring-boot:run
 
 ## 七、初始数据
 
-> ⚠️ 当前仓库 `src/main/resources/sql/` 目录不存在，旧版 README 引用的 `init_data.sql` 缺失。
-> 需自行准备 `admin` 表与 `reader_info` 表的建表语句及初始数据。
+> 执行 `src/main/resources/mapper/Library.sql` 即可建库建表并导入全部种子数据。
 
-参考初始账号（需自行建表插入）：
-- **管理员**：`admin / admin123`（adminType=1）
-- **读者**：`zhangsan / 123456`（张三，编号 `8120116001`）
+种子账号（来自 Library.sql）：
+- **管理员**：`admin / 12345`（adminType=1 超级管理员）、`qqwer / 12345`、`xy1222 / 12345`（普通）
+- **读者**：`zhangsan / 12345`（彭于晏，编号 `8120116041`）、`mary / 12345`（陈恋）、`cindy / 12345`（辛帝）
+- **图书**：6 条（西游记 / 三国演义 / 红楼梦 / 资本论 / 经济学原理 / 大变局下的中国法治）
+- **借阅记录**：5 条（id 39 为未归还）
+- **公告**：6 条　**图书分类**：6 类（文学 / 历史 / 工学 / 法学 / 经济学 / 统计学）
 
 ---
 
@@ -223,3 +252,4 @@ mvn spring-boot:run
 | [README.md](./README.md) | 本文件 — 项目说明、机制、接口、缺陷、启动指南 |
 | [api-spec.json](./api-spec.json) | OpenAPI 3.0 规范（可直接导入 Postman / Swagger Editor） |
 | [api-doc.html](./api-doc.html) | 纯静态 API 文档（浏览器打开，无需联网） |
+| [src/main/resources/mapper/Library.sql](./src/main/resources/mapper/Library.sql) | 建库建表 + 种子数据脚本 |
