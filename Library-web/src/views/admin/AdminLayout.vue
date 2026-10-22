@@ -7,8 +7,8 @@ const router = useRouter();
 const userStore = useUserStore();
 const { logout } = useLogout();
 
-const adminTypeLabel = (t: string) =>
-  t === 'librarian' ? '图书管理员' : t === 'manager' ? '馆长' : t;
+const adminTypeLabel = (t: number | undefined) =>
+  t === 1 ? '馆长' : t === 0 ? '图书管理员' : (t ?? '');
 </script>
 
 <template>
@@ -17,7 +17,7 @@ const adminTypeLabel = (t: string) =>
       <div class="sidebar-header">
         <h2>管理后台</h2>
         <p class="username">{{ userStore.user?.username }}</p>
-        <p class="role">{{ adminTypeLabel((userStore.user as adminInfo | null)?.adminType || '') }}</p>
+        <p class="role">{{ adminTypeLabel((userStore.user as adminInfo | null)?.adminType) }}</p>
       </div>
       <nav class="sidebar-nav">
         <router-link to="/admin/dashboard" class="nav-item">控制台</router-link>

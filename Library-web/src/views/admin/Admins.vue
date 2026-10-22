@@ -42,7 +42,7 @@ onMounted(() => {
           <tr v-for="a in list" :key="a.id">
             <td>{{ a.id }}</td>
             <td>{{ a.username }}</td>
-            <td>{{ a.adminType === 'librarian' ? '图书管理员' : a.adminType === 'manager' ? '馆长' : a.adminType }}</td>
+            <td>{{ a.adminType === 1 ? '馆长' : a.adminType === 0 ? '图书管理员' : a.adminType }}</td>
           </tr>
         </tbody>
       </table>
