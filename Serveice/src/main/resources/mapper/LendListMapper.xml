@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.Library.mapper.LendListMapper">
+
+    <sql id="joinBase">
+        SELECT l.id, l.bookId, l.readerId, l.lendDate, l.backDate, l.backType, l.exceptRemarks,
+               b.name AS bookName, b.author AS bookAuthor,
+               r.realName AS readerRealName, r.readerNumber AS readerNumber
+        FROM lend_list l
+        LEFT JOIN book_info b ON l.bookId = b.id
+        LEFT JOIN reader_info r ON l.readerId = r.id
+    </sql>
+
+    <select id="queryAll" resultType="com.Library.entity.LendList">
+        <include refid="joinBase"/>
+        <where>
+            <if test="bookName != null and bookName != ''">
+                AND b.name LIKE CONCAT('%', #{bookName}, '%')
+            </if>
+            <if test="readerName != null and readerName != ''">
+                AND r.realName LIKE CONCAT('%', #{readerName}, '%')
+            </if>
+            <if test="backType != null">
+                AND l.backType = #{backType}
+            </if>
+        </where>
+        ORDER BY l.lendDate DESC
+    </select>
+
+    <select id="findById" resultType="com.Library.entity.LendList">
+        <include refid="joinBase"/>
+        WHERE l.id = #{id}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO lend_list (bookId, readerId, lendDate, backDate, backType, exceptRemarks)
+        VALUES (#{bookId}, #{readerId}, #{lendDate}, #{backDate}, #{backType}, #{exceptRemarks})
+    </insert>
+
+    <update id="updateBack">
+        UPDATE lend_list
+        SET backDate = #{backDate},
+            backType = #{backType},
+            exceptRemarks = #{exceptRemarks}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        DELETE FROM lend_list WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="findByReaderId" resultType="com.Library.entity.LendList">
+        <include refid="joinBase"/>
+        WHERE l.readerId = #{readerId}
+        ORDER BY l.lendDate DESC
+    </select>
+
+    <select id="findByBookId" resultType="com.Library.entity.LendList">
+        <include refid="joinBase"/>
+        WHERE l.bookId = #{bookId}
+        ORDER BY l.lendDate DESC
+    </select>
+
+    <select id="findActiveByBookId" resultType="com.Library.entity.LendList">
+        <include refid="joinBase"/>
+        WHERE l.bookId = #{bookId} AND l.backDate IS NULL
+        ORDER BY l.lendDate DESC
+    </select>
+
+</mapper>

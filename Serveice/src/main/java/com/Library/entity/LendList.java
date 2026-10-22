@@ -13,4 +13,11 @@ public class LendList {
     private Date backDate;
     private Integer backType;
     private String exceptRemarks;
+
+    // 关联展示字段（JOIN 查询时填充）
+    private String bookName;
+    private String bookAuthor;
+    private String readerRealName;
+    private String readerNumber;
+
 }
