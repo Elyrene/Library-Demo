@@ -51,7 +51,8 @@ src/main/java/com/Library/
 │   ├── AuthController.java                 # /api/auth    登录 / 登出 / 当前用户
 │   ├── AdminController.java                # /api/admins  管理员 CRUD
 │   ├── ReaderController.java               # /api/readers 读者注册 / 查询
-│   └── LendController.java                 # /api/lends   借阅 / 归还 / 查询 / 删除
+│   ├── LendController.java                 # /api/lends   借阅 / 归还 / 查询 / 删除
+│   └── BookController.java                 # /api/books   图书 CRUD / 分页查询 / 批量删除
 ├── service/
 │   ├── LendService.java                    # 借阅服务接口
 │   └── impl/
@@ -59,7 +60,7 @@ src/main/java/com/Library/
 ├── mapper/
 │   ├── AdminMapper.java                    # 管理员 Mapper（6 个方法）
 │   ├── ReaderInfoMapper.java               # 读者 Mapper（4 个方法）
-│   ├── BookInfoMapper.java                 # 图书 Mapper（findById / queryAll / updateStatus）
+│   ├── BookInfoMapper.java                 # 图书 Mapper（findById / queryAll / insert / update / updateStatus / deleteByIds）
 │   └── LendListMapper.java                 # 借阅记录 Mapper（queryAll / insert / updateBack / 等）
 ├── entity/
 │   ├── Admin.java                          # 管理员实体
@@ -180,6 +181,15 @@ long total = new PageInfo<>(list).getTotal();
 | GET | `/{id}` | 按 ID 查询 |
 | POST | `/register` | 注册（自动生成读者编号） |
 
+### 图书 `/api/books`（需登录）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `` | 分页查询（支持 `name` 模糊搜索、`typeId` / `status` 筛选） |
+| GET | `/{id}` | 按 ID 查询 |
+| POST | `` | 新增（`status` 默认 0；名称为空时拒绝） |
+| PUT | `/{id}` | 修改图书信息（全字段） |
+| DELETE | `` | 批量删除（body: `List<Integer>` ids） |
 ### 借阅 `/api/lends`（需登录）
 
 | 方法 | 路径 | 说明 |
@@ -204,7 +214,7 @@ long total = new PageInfo<>(list).getTotal();
 | 2 | ~~`AdminMapper.xml`~~ | ✅ 已修复：原缺少 `updatePassword` 的 SQL（调用 `PUT /api/admins/{id}/password` 会抛 `BindingException`），已补充 `<update>` 语句 |
 | 3 | `application.yml` | 数据源账号密码硬编码（`Library_db` / `Library_db`），应移至环境变量 |
 | 4 | ~~安全~~ | ✅ 已修复：原无登录拦截器，`/api/admins`、`/api/readers` 可被未认证访问；已新增 `AuthInterceptor` 统一拦截，未登录返回 401 |
-| 5 | ~~`BookMapper`~~ | ✅ 已补充：`BookInfoMapper` 已创建（findById / queryAll / updateStatus / updateStatusById） |
+| 5 | ~~`BookMapper`~~ | ✅ 已补充：`BookInfoMapper` 已创建（findById / queryAll / insert / update / updateStatus / deleteByIds），并新增 `BookController`（`/api/books`）提供图书 CRUD |
 | 6 | `application.yml` | 数据库连接信息（库名 `library_db`、用户名、密码）仍为硬编码，建议迁移至环境变量或外部配置 |
 | 7 | 细粒度权限 | 拦截器仅校验「是否登录」，未区分角色；如需「仅管理员可访问 `/api/admins`」需进一步扩展 `AuthInterceptor`（读取 `Contants.SESSION_TYPE` 比对） |
 
