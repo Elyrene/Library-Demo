@@ -41,5 +41,34 @@
         SET status = #{status}
         WHERE id = #{id}
     </update>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO book_info (name, author, publish, isbn, introduction, language, price,
+                               publish_date, type_id, status)
+        VALUES (#{name}, #{author}, #{publish}, #{isbn}, #{introduction}, #{language}, #{price},
+                #{publishDate}, #{typeId}, #{status})
+    </insert>
+
+    <update id="update" parameterType="com.Library.entity.BookInfo">
+        UPDATE book_info
+        SET name = #{name},
+            author = #{author},
+            publish = #{publish},
+            isbn = #{isbn},
+            introduction = #{introduction},
+            language = #{language},
+            price = #{price},
+            publish_date = #{publishDate},
+            type_id = #{typeId},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        DELETE FROM book_info
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
 
 </mapper>

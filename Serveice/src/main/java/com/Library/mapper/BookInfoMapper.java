@@ -12,6 +12,9 @@ public interface BookInfoMapper {
     List<BookInfo> queryAll(@Param("name") String name,
                             @Param("typeId") Integer typeId,
                             @Param("status") Integer status);
+    int insert(BookInfo book);
+    int update(BookInfo book);
     int updateStatus(BookInfo book);
     int updateStatusById(@Param("id") Integer id, @Param("status") Integer status);
+    int deleteByIds(@Param("ids") List<Integer> ids);
 }
