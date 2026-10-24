@@ -24,3 +24,17 @@ interface SessionData {
     role: string;
     cookie: string;
 }
+
+interface lendInfo {
+    id: number;
+    bookId: number;
+    readerId: number;
+    lendDate: string;
+    backDate?: string | null;
+    backType?: number | null;
+    exceptRemarks?: string | null;
+    bookName?: string | null;
+    bookAuthor?: string | null;
+    readerRealName?: string | null;
+    readerNumber?: string | null;
+}

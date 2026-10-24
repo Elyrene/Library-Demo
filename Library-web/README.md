@@ -29,10 +29,11 @@ Library-web/
     ├── App.vue              # 根组件，仅 <router-view>
     ├── assets/              # 全局样式 base.css / main.css、logo.svg
     ├── api/
+    │   ├── lends.ts         # 借阅记录接口封装（listLends / lendBook / backLend / deleteLends ...）
     │   ├── index.ts         # HttpClient 封装（baseURL http://localhost:8080, withCredentials）
     │   ├── handler.ts       # 响应处理（DataInfo 解包、错误码、401 处理）
-    │   ├── map.d.ts         # 实体类型（readerInfo / adminInfo / SessionData ...）
-    │   └── response.d.ts    # 各接口响应类型（AuthLoginRes / AdminsRes ...）
+    │   ├── map.d.ts         # 实体类型（readerInfo / adminInfo / SessionData / lendInfo ...）
+    │   └── response.d.ts    # 各接口响应类型（AuthLoginRes / AdminsRes / LendsRes ...）
     ├── router/index.ts      # 路由表 + 全局 beforeEach 守卫（登录态/角色校验）
     ├── composables/
     │   └── useLogout.ts     # 登出逻辑（调用后端 + 清本地态 + 跳登录）
@@ -46,11 +47,11 @@ Library-web/
         │   ├── ReaderLayout.vue
         │   ├── Dashboard.vue    # 占位
         │   ├── Profile.vue      # 我的信息（GET /api/readers/{id}）
-        │   └── BorrowedBooks.vue # 占位
+        │   └── BorrowedBooks.vue # 我的借阅（列表 / 借书 / 还书，/api/lends/**）
         └── admin/           # 管理员区域（AdminLayout 布局）
             ├── AdminLayout.vue
             ├── Dashboard.vue    # 占位
-            ├── Books.vue        # 占位
+            ├── Books.vue        # 借阅管理（列表 / 筛选 / 分页 / 借书 / 还书 / 批量删除，/api/lends/**）
             ├── Admins.vue       # 管理员列表（GET /api/admins）
             ├── Readers.vue      # 读者查询（GET /api/readers/{id}）
             └── ChangePassword.vue # 修改密码（PUT /api/admins/{id}/password）
@@ -94,9 +95,9 @@ pnpm preview      # 本地预览构建产物
 | `/home` | `views/Home.vue` | 角色分流页：admin → `/admin/dashboard`，reader → `/reader/dashboard` |
 | `/reader/dashboard` | `views/reader/Dashboard.vue` | 读者控制台（占位） |
 | `/reader/profile` | `views/reader/Profile.vue` | 我的信息 |
-| `/reader/borrowed` | `views/reader/BorrowedBooks.vue` | 借阅记录（占位） |
+| `/reader/borrowed` | `views/reader/BorrowedBooks.vue` | 我的借阅（借书 / 还书 / 借阅历史） |
 | `/admin/dashboard` | `views/admin/Dashboard.vue` | 管理控制台（占位） |
-| `/admin/books` | `views/admin/Books.vue` | 图书管理（占位） |
+| `/admin/books` | `views/admin/Books.vue` | 借阅管理（借书 / 还书 / 筛选 / 分页 / 批量删除） |
 | `/admin/admins` | `views/admin/Admins.vue` | 管理员列表 |
 | `/admin/readers` | `views/admin/Readers.vue` | 读者查询 |
 | `/admin/password` | `views/admin/ChangePassword.vue` | 修改密码 |
@@ -146,6 +147,13 @@ pnpm preview      # 本地预览构建产物
 | PUT | `/api/admins/{id}/password` | `AdminsPasswordRes` | 修改管理员密码 `{password}` |
 | GET | `/api/readers/{id}` | `ReadersIdRes` | 按 ID 查询读者 |
 | POST | `/api/readers/register` | `ReadersRegisterRes` | 读者注册 |
+| GET | `/api/lends` | `LendsRes` | 分页查询借阅记录（`?pageNum&limit&bookName&readerName&backType`） |
+| GET | `/api/lends/{id}` | `LendIdRes` | 按 ID 查询借阅记录 |
+| GET | `/api/lends/reader/{readerId}` | `LendsPlainRes` | 读者借阅历史（不分页） |
+| GET | `/api/lends/book/{bookId}` | `LendsPlainRes` | 图书借阅记录（不分页） |
+| POST | `/api/lends` | `LendPostRes` | 借书 `{bookId, readerId}`（置图书 status=1） |
+| PUT | `/api/lends/{id}/back` | `LendBackRes` | 还书 `{backType, exceptRemarks}`（置图书 status=0） |
+| DELETE | `/api/lends` | `LendDeleteRes` | 批量删除借阅记录（body 为 `number[]`） |
 
 角色（`role`）取值：`admin` / `reader`；管理员类型 `adminType`：`0` 普通 / `1` 超级管理员（整数）。
 
@@ -159,13 +167,16 @@ pnpm preview      # 本地预览构建产物
 - 管理员区域：管理员列表（Admins）、读者查询（Readers）、修改密码（ChangePassword）
 - 统一 `HttpClient` 封装 + `DataInfo<T>` 响应解包 + 401 拦截
 - 全部 TypeScript 类型定义（实体 + 各接口响应），`vue-tsc --noEmit` 通过
+- 借阅管理（`/api/lends`）：
+  - 读者端 `views/reader/BorrowedBooks.vue` —— 我的借阅列表（`/api/lends/reader/{id}`）、借书（`POST /api/lends`）、还书（`PUT /api/lends/{id}/back`）
+  - 管理端 `views/admin/Books.vue` —— 分页列表 + 书名/读者姓名模糊筛选 + backType 状态筛选、借书、还书、批量删除（`DELETE /api/lends`）
+  - 封装层 `src/api/lends.ts`（listLends / getLendById / listLendsByReader / listLendsByBook / lendBook / backLend / deleteLends）
 
 ### 占位 / 待开发
-- 读者区域：Dashboard、BorrowedBooks（借阅记录）
-- 管理员区域：Dashboard（控制台）、Books（图书管理）
-- 读者区域：ChangePassword（读者改密，后端接口见 api-spec）
-- 管理员区域：Admins 的增 / 删 / 改（后端接口已就绪，前端仅列表）
+- 读者区域：Dashboard（控制台）、ChangePassword（读者改密，后端接口见 api-spec）
+- 管理员区域：Dashboard（控制台）、Admins 的增 / 删 / 改（后端接口已就绪，前端仅列表）
 - 分页：`GET /api/admins` 的 `page&size` 参数前端尚未接入
+- 管理员 Books 的「借书」当前以图书 ID + 读者 ID 手工输入，未做图书 / 读者选择器联动
 
 ## 环境要求
 
