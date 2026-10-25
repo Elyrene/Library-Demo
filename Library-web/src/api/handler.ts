@@ -5,6 +5,8 @@ interface HttpClientOption {
     headers?: HeadersInit; 
     timeout?: number;
     credentials?: RequestCredentials; 
+    /** 401（登录过期/未登录）时回调，由调用方注入跳转逻辑 */
+    onUnauthorized?: () => void;
 }
 
 interface HttpError<T = unknown> {
@@ -27,6 +29,8 @@ export class HttpClient {
     private defaultHeaders: HeadersInit;
     private timeout: number;
     private credentials: RequestCredentials;  // 新增
+    /** 401 回调（登录过期/未登录） */
+    public onUnauthorized?: () => void;
     public interceptors: Interceptors = {
         request: (config) => config,
         response: (Response) => Response,
@@ -36,12 +40,14 @@ export class HttpClient {
         baseURL = '',
         headers = {},
         timeout = 10000,
-        credentials = 'include'
+        credentials = 'include',
+        onUnauthorized
     }:HttpClientOption = {}) {
         this.baseURL = baseURL;
         this.defaultHeaders = headers;
         this.timeout = timeout;
         this.credentials = credentials;
+        this.onUnauthorized = onUnauthorized;
         this.interceptors = {
             request: (config) => config,
             response: (response) => response,
@@ -105,10 +111,20 @@ export class HttpClient {
                     message: (errorData as {message?: string}).message ?? response.statusText,
                     data: errorData,
                 };
+                // 401: 登录过期 / 未登录 → 触发回调（清态 + 跳登录页）
+                if (response.status === 401) {
+                    this.onUnauthorized?.();
+                }
                 throw error;
             }
 
             const result = (await response.json()) as T;
+            // DataInfo code=401: 后端业务层未登录 / 会话过期
+            if (result && typeof result === 'object' && 'code' in (result as Record<string, unknown>)
+                && (result as unknown as { code: number }).code === 401) {
+                this.onUnauthorized?.();
+                return this.interceptors.response(result);
+            }
             return this.interceptors.response(result);
         } catch (error: unknown) {
             clearTimeout(timeoutId);

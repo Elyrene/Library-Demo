@@ -107,6 +107,7 @@ async function doChange() {
 }
 .input {
   width: 100%;
+  box-sizing: border-box;
   padding: 8px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;

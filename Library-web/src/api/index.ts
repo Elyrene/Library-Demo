@@ -1,11 +1,21 @@
 import { HttpClient } from "./handler";
+import router from "@/router";
+import { useUserStore } from "@/stores/user";
 
 export const api = new HttpClient({
   baseURL: 'http://localhost:8080' ,
-//   headers: {
-//     Authorization: 'Bearer your_token_here',
-//   },
   timeout: 5000,
+  onUnauthorized: () => {
+    // 防止多个 401 请求同时触发多次弹窗
+    if ((window as any).__unauthRedirecting) return;
+    (window as any).__unauthRedirecting = true;
+    const userStore = useUserStore();
+    userStore.clearUser();
+    // 纯提示弹窗（仅「确定」按钮），确认后跳登录页
+    window.alert('登录已过期，请重新登录');
+    router.push('/login');
+    setTimeout(() => { (window as any).__unauthRedirecting = false; }, 1000);
+  },
 });
 
 api.setRequestInterceptor((config) => {

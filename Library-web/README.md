@@ -174,7 +174,7 @@ pnpm preview      # 本地预览构建产物
 - 角色分流首页（`/home`）
 - 读者区域：我的信息（Profile，实时拉取后端数据）
 - 管理员区域：管理员列表（Admins）、读者查询（Readers）、修改密码（ChangePassword）
-- 统一 `HttpClient` 封装 + `DataInfo<T>` 响应解包 + 401 拦截
+- 统一 `HttpClient` 封装 + `DataInfo<T>` 响应解包 + **401 登录过期自动跳回登录页**（`onUnauthorized` 回调：清本地态 + `router.push('/login')`）
 - 全部 TypeScript 类型定义（实体 + 各接口响应），`vue-tsc --noEmit` 通过
 - **图书管理（`/api/books`）**：
   - 管理端 `views/admin/BookInfo.vue` —— 分页列表 + 书名/分类/状态筛选 + 新增 + 编辑 + 批量删除
