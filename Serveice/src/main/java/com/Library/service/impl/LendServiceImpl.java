@@ -66,8 +66,7 @@ public class LendServiceImpl implements LendService {
         if (rows <= 0) {
             return "借书失败";
         }
-        book.setStatus(1);
-        bookInfoMapper.updateStatus(book);
+        bookInfoMapper.updateStatusById(req.getBookId(), 1);
         return null;
     }
 

@@ -14,7 +14,6 @@ public interface BookInfoMapper {
                             @Param("status") Integer status);
     int insert(BookInfo book);
     int update(BookInfo book);
-    int updateStatus(BookInfo book);
     int updateStatusById(@Param("id") Integer id, @Param("status") Integer status);
     int deleteByIds(@Param("ids") List<Integer> ids);
 }

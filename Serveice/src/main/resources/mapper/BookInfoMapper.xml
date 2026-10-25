@@ -30,11 +30,6 @@
         ORDER BY id
     </select>
 
-    <update id="updateStatus" parameterType="com.Library.entity.BookInfo">
-        UPDATE book_info
-        SET status = #{status}
-        WHERE id = #{id}
-    </update>
 
     <update id="updateStatusById">
         UPDATE book_info
