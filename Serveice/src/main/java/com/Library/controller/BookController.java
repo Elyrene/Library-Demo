@@ -72,7 +72,10 @@ public class BookController {
         if (exist == null) {
             return DataInfo.fail("图书不存在");
         }
+        // status（0未借出/1已借出）由借还业务流程管理，不允许通过通用编辑接口修改；
+        // 用数据库现有值回填，避免前端未携带 status 时把状态覆盖为 NULL。
         book.setId(id);
+        book.setStatus(exist.getStatus());
         int rows = bookInfoMapper.update(book);
         return rows > 0 ? DataInfo.ok() : DataInfo.fail("修改失败");
     }
