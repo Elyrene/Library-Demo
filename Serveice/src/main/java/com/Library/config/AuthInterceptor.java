@@ -1,6 +1,6 @@
 package com.Library.config;
 
-import com.Library.common.Contants;
+import com.Library.common.Contents;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,7 +27,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
         HttpSession session = request.getSession(false);
-        Object user = session == null ? null : session.getAttribute(Contants.SESSION_USER);
+        Object user = session == null ? null : session.getAttribute(Contents.SESSION_USER);
         if (user == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json;charset=UTF-8");

@@ -1,6 +1,6 @@
 package com.Library.controller;
 
-import com.Library.common.Contants;
+import com.Library.common.Contents;
 import com.Library.common.DataInfo;
 import com.Library.controller.dto.LoginRequest;
 import com.Library.entity.Admin;
@@ -33,8 +33,8 @@ public class AuthController {
             if (admin == null || admin.getPassword() == null || !admin.getPassword().equals(res.getPassword())) {
                 return DataInfo.fail("账户或者密码错误");
             }
-            session.setAttribute(Contants.SESSION_USER, admin);
-            session.setAttribute(Contants.SESSION_TYPE, "admin");
+            session.setAttribute(Contents.SESSION_USER, admin);
+            session.setAttribute(Contents.SESSION_TYPE, "admin");
             return DataInfo.ok();
         }
 
@@ -42,23 +42,23 @@ public class AuthController {
         if (reader == null || reader.getPassword() == null || !reader.getPassword().equals(res.getPassword())) {
             return DataInfo.fail("账户或者密码错误");
         }
-        session.setAttribute(Contants.SESSION_USER, reader);
-        session.setAttribute(Contants.SESSION_TYPE, "reader");
+        session.setAttribute(Contents.SESSION_USER, reader);
+        session.setAttribute(Contents.SESSION_TYPE, "reader");
         return DataInfo.ok();
     }
 
     @PostMapping("/logout")
     public DataInfo<Void> logout(HttpSession session) {
-        session.removeAttribute(Contants.SESSION_USER);
-        session.removeAttribute(Contants.SESSION_TYPE);
+        session.removeAttribute(Contents.SESSION_USER);
+        session.removeAttribute(Contents.SESSION_TYPE);
         session.invalidate();
         return DataInfo.ok();
     }
 
     @GetMapping("/me")
     public DataInfo<Map<String, Object>> me (HttpSession session) {
-        Object user = session.getAttribute(Contants.SESSION_USER);
-        Object type = session.getAttribute(Contants.SESSION_TYPE);
+        Object user = session.getAttribute(Contents.SESSION_USER);
+        Object type = session.getAttribute(Contents.SESSION_TYPE);
 
         if (user == null || type == null) {
             return DataInfo.fail("未登录");
