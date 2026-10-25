@@ -29,11 +29,12 @@ Library-web/
     ├── App.vue              # 根组件，仅 <router-view>
     ├── assets/              # 全局样式 base.css / main.css、logo.svg
     ├── api/
+    │   ├── books.ts         # 图书接口封装（listBooks / getBookById / addBook / updateBook / deleteBooks）
     │   ├── lends.ts         # 借阅记录接口封装（listLends / lendBook / backLend / deleteLends ...）
     │   ├── index.ts         # HttpClient 封装（baseURL http://localhost:8080, withCredentials）
     │   ├── handler.ts       # 响应处理（DataInfo 解包、错误码、401 处理）
-    │   ├── map.d.ts         # 实体类型（readerInfo / adminInfo / SessionData / lendInfo ...）
-    │   └── response.d.ts    # 各接口响应类型（AuthLoginRes / AdminsRes / LendsRes ...）
+    │   ├── map.d.ts         # 实体类型（readerInfo / adminInfo / bookInfo / lendInfo ...）
+    │   └── response.d.ts    # 各接口响应类型（AuthLoginRes / BooksRes / AdminsRes / LendsRes ...）
     ├── router/index.ts      # 路由表 + 全局 beforeEach 守卫（登录态/角色校验）
     ├── composables/
     │   └── useLogout.ts     # 登出逻辑（调用后端 + 清本地态 + 跳登录）
@@ -45,13 +46,15 @@ Library-web/
         ├── Regist.vue       # 读者注册页
         ├── reader/          # 读者区域（ReaderLayout 布局）
         │   ├── ReaderLayout.vue
-        │   ├── Dashboard.vue    # 占位
+        │   ├── Dashboard.vue    # 读者控制台：欢迎卡片 + 新书推荐 + 我的借阅
         │   ├── Profile.vue      # 我的信息（GET /api/readers/{id}）
+        │   ├── BookBrowse.vue   # 图书浏览：搜索/筛选/详情/借阅入口
         │   └── BorrowedBooks.vue # 我的借阅（列表 / 借书 / 还书，/api/lends/**）
         └── admin/           # 管理员区域（AdminLayout 布局）
             ├── AdminLayout.vue
-            ├── Dashboard.vue    # 占位
-            ├── Books.vue        # 借阅管理（列表 / 筛选 / 分页 / 借书 / 还书 / 批量删除，/api/lends/**）
+            ├── Dashboard.vue    # 管理控制台：欢迎卡片 + 统计卡片 + 快捷操作
+            ├── BookInfo.vue     # 图书管理（增/删/改/查，/api/books/**）
+            ├── Books.vue        # 借阅管理（列表/筛选/分页/借书/还书/批量删除，/api/lends/**）
             ├── Admins.vue       # 管理员列表（GET /api/admins）
             ├── Readers.vue      # 读者查询（GET /api/readers/{id}）
             └── ChangePassword.vue # 修改密码（PUT /api/admins/{id}/password）
@@ -93,11 +96,13 @@ pnpm preview      # 本地预览构建产物
 | `/login` | `views/Login.vue` | 登录页（公开） |
 | `/regist` | `views/Regist.vue` | 读者注册（公开） |
 | `/home` | `views/Home.vue` | 角色分流页：admin → `/admin/dashboard`，reader → `/reader/dashboard` |
-| `/reader/dashboard` | `views/reader/Dashboard.vue` | 读者控制台（占位） |
+| `/reader/dashboard` | `views/reader/Dashboard.vue` | 读者控制台：欢迎卡片 + 新书推荐 + 我的借阅 |
+| `/reader/books` | `views/reader/BookBrowse.vue` | 图书浏览（搜索/筛选/详情/借阅入口） |
 | `/reader/profile` | `views/reader/Profile.vue` | 我的信息 |
 | `/reader/borrowed` | `views/reader/BorrowedBooks.vue` | 我的借阅（借书 / 还书 / 借阅历史） |
-| `/admin/dashboard` | `views/admin/Dashboard.vue` | 管理控制台（占位） |
-| `/admin/books` | `views/admin/Books.vue` | 借阅管理（借书 / 还书 / 筛选 / 分页 / 批量删除） |
+| `/admin/dashboard` | `views/admin/Dashboard.vue` | 管理控制台：欢迎卡片 + 统计 + 快捷操作 |
+| `/admin/bookinfo` | `views/admin/BookInfo.vue` | 图书管理（增/删/改/查/筛选/分页） |
+| `/admin/lends` | `views/admin/Books.vue` | 借阅管理（借书 / 还书 / 筛选 / 分页 / 批量删除） |
 | `/admin/admins` | `views/admin/Admins.vue` | 管理员列表 |
 | `/admin/readers` | `views/admin/Readers.vue` | 读者查询 |
 | `/admin/password` | `views/admin/ChangePassword.vue` | 修改密码 |
@@ -147,6 +152,11 @@ pnpm preview      # 本地预览构建产物
 | PUT | `/api/admins/{id}/password` | `AdminsPasswordRes` | 修改管理员密码 `{password}` |
 | GET | `/api/readers/{id}` | `ReadersIdRes` | 按 ID 查询读者 |
 | POST | `/api/readers/register` | `ReadersRegisterRes` | 读者注册 |
+| GET | `/api/books` | `BooksRes` | 分页查询图书列表（`?pageNum&limit&name&typeId&status`） |
+| POST | `/api/books` | `BookPostRes` | 新增图书（body 为 `bookInfo`） |
+| DELETE | `/api/books` | `BookDeleteRes` | 批量删除图书（body 为 `number[]`） |
+| GET | `/api/books/{id}` | `BookIdRes` | 按 ID 查询图书 |
+| PUT | `/api/books/{id}` | `BookPutRes` | 更新图书（body 为 `bookInfo`） |
 | GET | `/api/lends` | `LendsRes` | 分页查询借阅记录（`?pageNum&limit&bookName&readerName&backType`） |
 | GET | `/api/lends/{id}` | `LendIdRes` | 按 ID 查询借阅记录 |
 | GET | `/api/lends/reader/{readerId}` | `LendsPlainRes` | 读者借阅历史（不分页） |
@@ -154,7 +164,6 @@ pnpm preview      # 本地预览构建产物
 | POST | `/api/lends` | `LendPostRes` | 借书 `{bookId, readerId}`（置图书 status=1） |
 | PUT | `/api/lends/{id}/back` | `LendBackRes` | 还书 `{backType, exceptRemarks}`（置图书 status=0） |
 | DELETE | `/api/lends` | `LendDeleteRes` | 批量删除借阅记录（body 为 `number[]`） |
-
 角色（`role`）取值：`admin` / `reader`；管理员类型 `adminType`：`0` 普通 / `1` 超级管理员（整数）。
 
 ## 项目进度
@@ -167,18 +176,25 @@ pnpm preview      # 本地预览构建产物
 - 管理员区域：管理员列表（Admins）、读者查询（Readers）、修改密码（ChangePassword）
 - 统一 `HttpClient` 封装 + `DataInfo<T>` 响应解包 + 401 拦截
 - 全部 TypeScript 类型定义（实体 + 各接口响应），`vue-tsc --noEmit` 通过
+- **图书管理（`/api/books`）**：
+  - 管理端 `views/admin/BookInfo.vue` —— 分页列表 + 书名/分类/状态筛选 + 新增 + 编辑 + 批量删除
+  - 读者端 `views/reader/BookBrowse.vue` —— 分页列表 + 书名/分类筛选 + 详情模态框 + 借阅入口
+  - 封装层 `src/api/books.ts`（listBooks / getBookById / addBook / updateBook / deleteBooks）
+- **控制台页面**：
+  - 读者控制台 `views/reader/Dashboard.vue` —— 欢迎卡片（姓名/编号/借阅统计）+ 新书推荐（6 本可借图书卡片）+ 我的借阅（最近记录表格）
+  - 管理控制台 `views/admin/Dashboard.vue` —— 欢迎卡片 + 统计（图书总数/可借/已借出/借阅记录）+ 快捷操作（图书/借阅/管理员/读者管理入口）
 - 借阅管理（`/api/lends`）：
   - 读者端 `views/reader/BorrowedBooks.vue` —— 我的借阅列表（`/api/lends/reader/{id}`）、借书（`POST /api/lends`）、还书（`PUT /api/lends/{id}/back`）
   - 管理端 `views/admin/Books.vue` —— 分页列表 + 书名/读者姓名模糊筛选 + backType 状态筛选、借书、还书、批量删除（`DELETE /api/lends`）
   - 封装层 `src/api/lends.ts`（listLends / getLendById / listLendsByReader / listLendsByBook / lendBook / backLend / deleteLends）
 
-### 占位 / 待开发
-- 读者区域：Dashboard（控制台）、ChangePassword（读者改密，后端接口见 api-spec）
-- 管理员区域：Dashboard（控制台）、Admins 的增 / 删 / 改（后端接口已就绪，前端仅列表）
+### 待开发 / 改进
+- 读者区域：ChangePassword（读者改密，后端暂无对应接口）
+- 管理员区域：Admins 的增 / 删 / 改（后端接口已就绪，前端仅列表）
 - 分页：`GET /api/admins` 的 `page&size` 参数前端尚未接入
-- 管理员 Books 的「借书」当前以图书 ID + 读者 ID 手工输入，未做图书 / 读者选择器联动
+- 借阅管理的「借书」当前以图书 ID + 读者 ID 手工输入，未做图书 / 读者选择器联动
+- 读者图书浏览的「去借阅」跳转至借阅页，未实现图书 ID 自动填充
 
 ## 环境要求
-
 - Node.js `^22.18.0 || >=24.12.0`（见 `package.json` `engines`）
 - pnpm（建议 v9+）
