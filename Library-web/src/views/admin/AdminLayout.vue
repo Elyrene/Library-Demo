@@ -21,9 +21,9 @@ const adminTypeLabel = (t: number | undefined) =>
       </div>
       <nav class="sidebar-nav">
         <router-link to="/admin/dashboard" class="nav-item">控制台</router-link>
-        <router-link to="/admin/books" class="nav-item">图书管理</router-link>
+        <router-link to="/admin/bookinfo" class="nav-item">图书管理</router-link>
+        <router-link to="/admin/lends" class="nav-item">借阅管理</router-link>
         <router-link to="/admin/admins" class="nav-item">管理员管理</router-link>
-        <router-link to="/admin/readers" class="nav-item">读者管理</router-link>
         <router-link to="/admin/password" class="nav-item">修改密码</router-link>
       </nav>
       <div class="sidebar-footer">

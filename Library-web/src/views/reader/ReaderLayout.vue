@@ -17,6 +17,7 @@ const { logout } = useLogout();
       </div>
       <nav class="sidebar-nav">
         <router-link to="/reader/dashboard" class="nav-item">控制台</router-link>
+        <router-link to="/reader/books" class="nav-item">图书浏览</router-link>
         <router-link to="/reader/profile" class="nav-item">个人中心</router-link>
         <router-link to="/reader/borrowed" class="nav-item">借阅记录</router-link>
       </nav>

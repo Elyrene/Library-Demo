@@ -49,6 +49,11 @@ const router = createRouter({
           name: 'reader-borrowed',
           component: () => import("../views/reader/BorrowedBooks.vue"),
         },
+        {
+          path: 'books',
+          name: 'reader-books',
+          component: () => import("../views/reader/BookBrowse.vue"),
+        },
       ],
     },
     // Admin section
@@ -81,6 +86,16 @@ const router = createRouter({
           path: 'password',
           name: 'admin-password',
           component: () => import("../views/admin/ChangePassword.vue"),
+        },
+        {
+          path: 'bookinfo',
+          name: 'admin-bookinfo',
+          component: () => import("../views/admin/BookInfo.vue"),
+        },
+        {
+          path: 'lends',
+          name: 'admin-lends',
+          component: () => import("../views/admin/Books.vue"),
         },
       ],
     },
