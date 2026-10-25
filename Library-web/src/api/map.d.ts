@@ -25,6 +25,21 @@ interface SessionData {
     cookie: string;
 }
 
+interface bookInfo {
+    id: number;
+    name: string;
+    author: string;
+    publish: string;
+    isbn: string;
+    introduction: string;
+    language: string;
+    price: number;
+    publishDate: string;
+    typeId: number;
+    status: number;
+}
+
+
 interface lendInfo {
     id: number;
     bookId: number;

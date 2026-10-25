@@ -1,4 +1,4 @@
-﻿interface AuthLoginRes {
+interface AuthLoginRes {
     code: number;
     mes: string;
 }
@@ -79,6 +79,39 @@ interface LendBackRes {
 
 // DELETE /api/lends 批量删除响应
 interface LendDeleteRes {
+    code: number;
+    mes: string;
+}
+
+// GET /api/books 响应（分页查询图书列表）
+interface BooksRes {
+    code: number;
+    mes: string;
+    count?: number;
+    data: bookInfo[];
+}
+
+// GET /api/books/{id} 响应（单条图书详情）
+interface BookIdRes {
+    code: number;
+    mes: string;
+    data: bookInfo;
+}
+
+// POST /api/books 新增图书响应
+interface BookPostRes {
+    code: number;
+    mes: string;
+}
+
+// PUT /api/books/{id} 修改图书响应
+interface BookPutRes {
+    code: number;
+    mes: string;
+}
+
+// DELETE /api/books 批量删除图书响应
+interface BookDeleteRes {
     code: number;
     mes: string;
 }
