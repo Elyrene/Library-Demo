@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.Library.mapper.NoticeMapper">
+
+    <select id="findById" resultType="com.Library.entity.Notice">
+        SELECT id, topic, content, author, createDate
+        FROM notice
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="queryAll" resultType="com.Library.entity.Notice">
+        SELECT id, topic, content, author, createDate
+        FROM notice
+        <where>
+            <if test="topic != null and topic != ''">
+                AND topic LIKE CONCAT('%', #{topic}, '%')
+            </if>
+            <if test="content != null and content != ''">
+                AND content LIKE CONCAT('%', #{content}, '%')
+            </if>
+        </where>
+        ORDER BY createDate DESC, id DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notice (topic, content, author, createDate)
+        VALUES (#{topic}, #{content}, #{author}, #{createDate})
+    </insert>
+
+    <update id="update" parameterType="com.Library.entity.Notice">
+        UPDATE notice
+        SET topic = #{topic},
+            content = #{content}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        DELETE FROM notice
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

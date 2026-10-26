@@ -28,7 +28,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
                 // 仅保护需登录的业务接口；/api/auth/** 登录、登出、当前用户不在此列
-                .addPathPatterns("/api/admins/**", "/api/readers/**", "/api/books/**")
+                .addPathPatterns("/api/admins/**", "/api/readers/**", "/api/books/**", "/api/notices/**")
                 .excludePathPatterns("/api/auth/**");
     }
 
