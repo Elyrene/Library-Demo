@@ -52,16 +52,20 @@ src/main/java/com/Library/
 │   ├── AdminController.java                # /api/admins  管理员 CRUD
 │   ├── ReaderController.java               # /api/readers 读者注册 / 查询
 │   ├── LendController.java                 # /api/lends   借阅 / 归还 / 查询 / 删除
-│   └── BookController.java                 # /api/books   图书 CRUD / 分页查询 / 批量删除
+│   ├── BookController.java                 # /api/books   图书 CRUD / 分页查询 / 批量删除
+│   └── NoticeController.java               # /api/notices 公告 CRUD / 分页查询 / 批量删除（写操作仅管理员）
 ├── service/
 │   ├── LendService.java                    # 借阅服务接口
+│   ├── NoticeService.java                  # 公告服务接口
 │   └── impl/
-│       └── LendServiceImpl.java            # 借阅服务实现（借书 / 还书事务）
+│       ├── LendServiceImpl.java            # 借阅服务实现（借书 / 还书事务）
+│       └── NoticeServiceImpl.java          # 公告服务实现
 ├── mapper/
 │   ├── AdminMapper.java                    # 管理员 Mapper（6 个方法）
 │   ├── ReaderInfoMapper.java               # 读者 Mapper（4 个方法）
 │   ├── BookInfoMapper.java                 # 图书 Mapper（findById / queryAll / insert / update / updateStatus / deleteByIds）
-│   └── LendListMapper.java                 # 借阅记录 Mapper（queryAll / insert / updateBack / 等）
+│   ├── LendListMapper.java                 # 借阅记录 Mapper（queryAll / insert / updateBack / 等）
+│   └── NoticeMapper.java                   # 公告 Mapper（findById / queryAll / insert / update / deleteByIds）
 ├── entity/
 │   ├── Admin.java                          # 管理员实体
 │   ├── ReaderInfo.java                     # 读者实体
@@ -119,10 +123,11 @@ src/main/resources/
 
 `AuthInterceptor`（注册于 `WebConfig.addInterceptors`）：
 
-- **保护范围**：`/api/admins/**`、`/api/readers/**`
+- **保护范围**：`/api/admins/**`、`/api/readers/**`、`/api/books/**`、`/api/notices/**`
 - **放行范围**：`/api/auth/**`（登录、登出、`/me`）、`OPTIONS` 预检请求
-- 校验逻辑：Session 中无 `user` 时，直接返回 **HTTP 401** + `{"code":401,"mes":"未登录或登录已过期"}`，无需各 Controller 重复判断
-- 已登录用户正常通过，由 Controller 继续业务逻辑
+- **校验逻辑**：Session 中无 `user` 时，直接返回 **HTTP 401** + `{"code":401,"mes":"未登录或登录已过期"}`，无需各 Controller 重复判断
+- **已登录用户**正常通过，由 Controller 继续业务逻辑
+- **角色权限**：拦截器目前仅校验「是否登录」，未区分角色；`/api/notices` 的写操作（POST / PUT / DELETE）在 `NoticeController` 中通过 Session 的 `SESSION_TYPE` 比对，**仅管理员**可执行，非管理员返回 `code -1` + `"仅管理员可..."`（详见 [api-spec.json](./api-spec.json)）。`/api/admins` 的细粒度角色限制仍是已知缺陷 #7
 
 ### 3.4 分页机制（PageHelper）
 
@@ -201,6 +206,18 @@ long total = new PageInfo<>(list).getTotal();
 | GET | `/reader/{readerId}` | 读者借阅历史 |
 | GET | `/book/{bookId}` | 图书借阅记录 |
 | DELETE | `` | 批量删除（body: `List<Integer>` ids） |
+
+### 公告 `/api/notices`（需登录）
+
+> 读操作（GET）对所有登录用户开放；写操作（POST / PUT / DELETE）**仅管理员**可执行，非管理员返回 `code -1` + "仅管理员可..."。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `` | 分页查询（按 `createDate` 倒序，支持 `topic` / `content` 模糊搜索） |
+| GET | `/{id}` | 按 ID 查询公告 |
+| POST | `` | 发布公告（**仅管理员**，body: `{"topic":"...","content":"..."}`，`author` 默认 `admin`） |
+| PUT | `/{id}` | 修改公告主题 / 内容（**仅管理员**，body: `{"topic":"...","content":"..."}`） |
+| DELETE | `` | 批量删除（**仅管理员**，body: `List<Integer>` ids） |
 
 > 完整参数 / 请求体 / 响应示例见 [api-spec.json](./api-spec.json) 或 [api-doc.html](./api-doc.html)。
 
