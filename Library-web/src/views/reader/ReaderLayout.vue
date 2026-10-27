@@ -20,6 +20,7 @@ const { logout } = useLogout();
         <router-link to="/reader/books" class="nav-item">图书浏览</router-link>
         <router-link to="/reader/profile" class="nav-item">个人中心</router-link>
         <router-link to="/reader/borrowed" class="nav-item">借阅记录</router-link>
+        <router-link to="/reader/notices" class="nav-item">公告</router-link>
       </nav>
       <div class="sidebar-footer">
         <button class="logout-btn" @click="logout">退出登录</button>
