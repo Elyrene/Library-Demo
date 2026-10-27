@@ -54,6 +54,11 @@ const router = createRouter({
           name: 'reader-books',
           component: () => import("../views/reader/BookBrowse.vue"),
         },
+        {
+          path: 'notices',
+          name: 'reader-notices',
+          component: () => import("../views/reader/Notices.vue"),
+        },
       ],
     },
     // Admin section
@@ -96,6 +101,11 @@ const router = createRouter({
           path: 'lends',
           name: 'admin-lends',
           component: () => import("../views/admin/Books.vue"),
+        },
+        {
+          path: 'notices',
+          name: 'admin-notices',
+          component: () => import("../views/admin/Notices.vue"),
         },
       ],
     },
