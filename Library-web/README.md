@@ -49,7 +49,8 @@ Library-web/
         │   ├── Dashboard.vue    # 读者控制台：欢迎卡片 + 新书推荐 + 我的借阅
         │   ├── Profile.vue      # 我的信息（GET /api/readers/{id}）
         │   ├── BookBrowse.vue   # 图书浏览：搜索/筛选/详情/借阅入口
-        │   └── BorrowedBooks.vue # 我的借阅（列表 / 借书 / 还书，/api/lends/**）
+        │   ├── BorrowedBooks.vue # 我的借阅（列表 / 借书 / 还书，/api/lends/**）
+        │   └── Notices.vue      # 公告展示（分页列表 + 详情，/api/notices）
         └── admin/           # 管理员区域（AdminLayout 布局）
             ├── AdminLayout.vue
             ├── Dashboard.vue    # 管理控制台：欢迎卡片 + 统计卡片 + 快捷操作
@@ -57,6 +58,7 @@ Library-web/
             ├── Books.vue        # 借阅管理（列表/筛选/分页/借书/还书/批量删除，/api/lends/**）
             ├── Admins.vue       # 管理员列表（GET /api/admins）
             ├── Readers.vue      # 读者查询（GET /api/readers/{id}）
+            ├── Notices.vue      # 公告管理（发布/修改/查找/删除，/api/notices/**）
             └── ChangePassword.vue # 修改密码（PUT /api/admins/{id}/password）
 ```
 
@@ -100,11 +102,13 @@ pnpm preview      # 本地预览构建产物
 | `/reader/books` | `views/reader/BookBrowse.vue` | 图书浏览（搜索/筛选/详情/借阅入口） |
 | `/reader/profile` | `views/reader/Profile.vue` | 我的信息 |
 | `/reader/borrowed` | `views/reader/BorrowedBooks.vue` | 我的借阅（借书 / 还书 / 借阅历史） |
+| `/reader/notices` | `views/reader/Notices.vue` | 公告（分页展示 / 详情） |
 | `/admin/dashboard` | `views/admin/Dashboard.vue` | 管理控制台：欢迎卡片 + 统计 + 快捷操作 |
 | `/admin/bookinfo` | `views/admin/BookInfo.vue` | 图书管理（增/删/改/查/筛选/分页） |
 | `/admin/lends` | `views/admin/Books.vue` | 借阅管理（借书 / 还书 / 筛选 / 分页 / 批量删除） |
 | `/admin/admins` | `views/admin/Admins.vue` | 管理员列表 |
 | `/admin/readers` | `views/admin/Readers.vue` | 读者查询 |
+| `/admin/notices` | `views/admin/Notices.vue` | 公告管理（发布 / 修改 / 查找 / 批量删除） |
 | `/admin/password` | `views/admin/ChangePassword.vue` | 修改密码 |
 
 ### 全局路由守卫（`router/index.ts` `beforeEach`）
@@ -164,6 +168,11 @@ pnpm preview      # 本地预览构建产物
 | POST | `/api/lends` | `LendPostRes` | 借书 `{bookId, readerId}`（置图书 status=1） |
 | PUT | `/api/lends/{id}/back` | `LendBackRes` | 还书 `{backType, exceptRemarks}`（置图书 status=0） |
 | DELETE | `/api/lends` | `LendDeleteRes` | 批量删除借阅记录（body 为 `number[]`） |
+| GET | `/api/notices` | `NoticesRes` | 分页查询公告列表（`?pageNum&limit&topic&content`） |
+| GET | `/api/notices/{id}` | `NoticeIdRes` | 按 ID 查询公告 |
+| POST | `/api/notices` | `NoticePostRes` | 发布公告 `{topic, content, author?}`（仅管理员） |
+| PUT | `/api/notices/{id}` | `NoticePutRes` | 修改公告 `{topic, content}`（仅管理员） |
+| DELETE | `/api/notices` | `NoticeDeleteRes` | 批量删除公告（body 为 `number[]`，仅管理员） |
 角色（`role`）取值：`admin` / `reader`；管理员类型 `adminType`：`0` 普通 / `1` 超级管理员（整数）。
 
 ## 项目进度
@@ -187,7 +196,10 @@ pnpm preview      # 本地预览构建产物
   - 读者端 `views/reader/BorrowedBooks.vue` —— 我的借阅列表（`/api/lends/reader/{id}`）、借书（`POST /api/lends`）、还书（`PUT /api/lends/{id}/back`）
   - 管理端 `views/admin/Books.vue` —— 分页列表 + 书名/读者姓名模糊筛选 + backType 状态筛选、借书、还书、批量删除（`DELETE /api/lends`）
   - 封装层 `src/api/lends.ts`（listLends / getLendById / listLendsByReader / listLendsByBook / lendBook / backLend / deleteLends）
-
+- **公告（`/api/notices`）**：
+  - 读者端 `views/reader/Notices.vue` —— 公告分页列表 + 详情弹窗（`GET /api/notices`）
+  - 管理端 `views/admin/Notices.vue` —— 公告管理（发布 / 编辑 / 主题与内容模糊查找 / 分页 / 批量删除）
+  - 封装层 `src/api/notices.ts`（listNotices / getNoticeById / addNotice / updateNotice / deleteNotices）
 ### 待开发 / 改进
 - 读者区域：ChangePassword（读者改密，后端暂无对应接口）
 - 管理员区域：Admins 的增 / 删 / 改（后端接口已就绪，前端仅列表）
