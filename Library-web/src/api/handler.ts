@@ -83,7 +83,7 @@ export class HttpClient {
             ...customConfig,
         };
 
-        if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
+        if (data && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
             if (data instanceof FormData) {
                 config.body = data;
                 const headers = config.headers as Record<string, string>;
@@ -93,7 +93,7 @@ export class HttpClient {
                     ...(config.headers as Record<string, string>),
                     'Content-Type': 'application/json',
                 }
-                config.body = JSON.stringify(data);
+                config.body = typeof data === 'string' ? data : JSON.stringify(data);
             }
         }
 
