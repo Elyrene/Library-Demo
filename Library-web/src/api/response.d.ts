@@ -115,3 +115,36 @@ interface BookDeleteRes {
     code: number;
     mes: string;
 }
+
+// GET /api/notices 响应（分页查询公告列表）
+interface NoticesRes {
+    code: number;
+    mes: string;
+    count?: number;
+    data: noticeInfo[];
+}
+
+// GET /api/notices/{id} 响应（单条公告详情）
+interface NoticeIdRes {
+    code: number;
+    mes: string;
+    data: noticeInfo;
+}
+
+// POST /api/notices 发布公告响应
+interface NoticePostRes {
+    code: number;
+    mes: string;
+}
+
+// PUT /api/notices/{id} 修改公告响应
+interface NoticePutRes {
+    code: number;
+    mes: string;
+}
+
+// DELETE /api/notices 批量删除公告响应
+interface NoticeDeleteRes {
+    code: number;
+    mes: string;
+}

@@ -53,3 +53,11 @@ interface lendInfo {
     readerRealName?: string | null;
     readerNumber?: string | null;
 }
+
+interface noticeInfo {
+    id: number;
+    topic: string;
+    content: string;
+    author?: string | null;
+    createDate?: string | null;
+}
